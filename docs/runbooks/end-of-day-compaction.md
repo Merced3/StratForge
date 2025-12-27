@@ -2,11 +2,11 @@
 
 **Goal** Merge part files into daily/monthly Parquet and (optionally) delete the parts.
 
-### When
+## When
 
 - After market close (automated in main loop) or manual maintenance.
 
-### Commands
+## Commands
 
 ```bash
 # Daily (candles)
@@ -23,10 +23,10 @@ python tools/compact_parquet.py --timeframe 15m --month 2025-09
 python tools/compact_parquet.py --timeframe 2m --day 2025-09-02 --keep-parts
 ```
 
-### Verification
+## Verification
 
 - Script re-reads the output and validates row counts and min/max `ts`.
 
-### Rollback
+## Rollback
 
 - If compaction output looks wrong, parts are still there unless `--keep-parts` was omitted. Re-run with `--keep-parts` next time.

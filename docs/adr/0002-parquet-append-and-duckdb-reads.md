@@ -10,6 +10,7 @@ CSV day files were growing unbounded, painful to compact, and slow to read. We n
 - **Reads:** in-memory DuckDB over `read_parquet(glob)`; SQL for last-event-per-object and time/price filters.
 
 ### Note on objects
+
 Events are appended to a daily **timeline**, and we also materialize a **current snapshot** for fast reads. The UI/viewport queries the snapshot (filtering by `status/top/bottom`), while DuckDB “last event per id” queries remain useful for audits/rebuilds.
 
 ## Alternatives

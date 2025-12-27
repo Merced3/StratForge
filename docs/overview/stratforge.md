@@ -7,7 +7,7 @@
 * **Self‑learning ready**: storage + contracts are built for later ML components.
 * **Docs first**: storage contracts, runbooks, and ADRs live under `docs/`.
 
-### Capabilities
+## Capabilities
 
 * Live data acquisition and candle building (2m/5m/15m …)
 * Event‑sourced **objects** (zones, levels, markers, flags) in Parquet
@@ -15,7 +15,7 @@
 * Strategy registry and shared indicators (EMA, etc.)
 * Append‑only Parquet writes with end‑of‑day compaction (DuckDB reads)
 
-### See also
+## See also
 
 * Storage overview: `docs/data/storage-system.md`
 * Architecture overview: `docs/architecture/overview.md`

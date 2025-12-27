@@ -2,7 +2,7 @@
 
 StratForge can run multiple strategies concurrently over one symbol. A strategy reads shared state (latest price, candles, objects) and emits **orders** and/or **annotations** (markers/flags) that the UI and storage can render.
 
-### Built‑in examples
+## Built‑in examples
 
 * **Flag Zone Strategy** — Detects supply/demand zones and adaptive flags.
 * **Momentum** — Breakout/breakdown with EMA/band filters.

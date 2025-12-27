@@ -29,11 +29,11 @@ Market Data  │  ws_auto_connect (Tradier/Polygon)  →  process_data    │
              └────────────────────────────────────────────────────────┘
 ```
 
-### Module breakdown
+## Module breakdown
 
 * **Data acquisition**: websocket client, candle builder, EMA updates
 * **Storage**: Parquet parts → daily/monthly compaction; DuckDB for reads
-* **Objects**: event-sourced zones/levels/markers/flags (append-only timeline) + materialized **current snapshot** for fast reads 
+* **Objects**: event-sourced zones/levels/markers/flags (append-only timeline) + materialized **current snapshot** for fast reads
 * **Services**: FastAPI WS broadcaster; Dash client subscriptions
 * **Strategies**: run against shared state; produce signals/orders
 
@@ -41,6 +41,6 @@ Market Data  │  ws_auto_connect (Tradier/Polygon)  →  process_data    │
 
 * Candles: `storage/data/<tf>/<YYYY-MM-DD>/part-*.parquet` → compacted `<YYYY-MM-DD>.parquet`
 * Objects:
-  - Snapshot (UI/viewport reads): `storage/objects/current/objects.parquet`
-  - Timeline (append-only events): `storage/objects/timeline/YYYY-MM/YYYY-MM-DD.parquet`
+  * Snapshot (UI/viewport reads): `storage/objects/current/objects.parquet`
+  * Timeline (append-only events): `storage/objects/timeline/YYYY-MM/YYYY-MM-DD.parquet`
 * EMA / flags / markers: optional JSON/CSV exports under `storage/<name>/` (for sharing/debug), not required by the UI

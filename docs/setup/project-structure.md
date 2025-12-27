@@ -37,13 +37,15 @@ Flag-Zone-Bo├─ .github/
 │  ├─ roadmap.md
 │  ├─ release-notes.md
 │  └─ TOC.md
+├─ indicators/                              # ----- Fill -----
+├─ logs/                                    # ----- Fill -----
 ├─ storage/
 │  ├─ data/
 │  │  ├─ 2m/
 │  │  │  ├─ 2025-10-22/
 │  │  │  │  ├─ part-20251022_133001.290000-c24f98a7.parquet
 │  │  │  │  ├─ ... more candle parts ...
-│  │  │  └─ 2025-10-22.parquet            # compacted dayfile (ts, ts_iso; global_x on 15m)
+│  │  │  └─ 2025-10-22.parquet              # compacted dayfile (ts, ts_iso; global_x on 15m)
 │  │  ├─ 5m/
 │  │  └─ 15m/
 │  ├─ objects/
@@ -70,9 +72,46 @@ Flag-Zone-Bo├─ .github/
 │  │  ├─ 2M.json
 │  │  ├─ 5M.json
 │  │  └─ 15M.json
-│  └─ csv/
-│     └─ order_log.csv
+│  ├─ csv/
+│  │  └─ order_log.csv
+│  ├─ __init__.py
+│  ├─ duck.py
+│  ├─ message_ids.json
+│  ├─ parquet_writer.py
+│  ├─ viewport.py
+│  ├─ week_ecom_calender.json
+│  └─ week_performances.json
+├─ strategies/
+│  └─ trading_strategy.py
+├─ test/
+│  ├─ storage_unit_tests/
+│  │  ├─ conftest.py
+│  │  ├─ test_compaction.py
+│  │  ├─ test_csv_to_parquet_days.py
+│  │  ├─ test_objects_storage.py
+│  │  ├─ test_parquet_writer.py
+│  │  └─ test_viewport.py
+│  └─ purpose.md
+├─ tools/
+│  ├─ __pycache__/
+│  ├─ __init__.py
+│  ├─ compact_parquet.py
+│  ├─ csv_to_parquet_days.py
+│  ├─ generate_structure.py
+│  ├─ normalize_ts_all.py
+│  └─ plot_candles.py
+├─ utils/
+│  ├─ __pycache__/
+│  ├─ data_utils.py
+│  ├─ ema_utils.py
+│  ├─ file_utils.py
+│  ├─ json_utils.py
+│  ├─ log_utils.py
+│  ├─ order_utils.py
+│  └─ time_utils.py
+├─ venv/                                    
 ├─ web_dash/
+│  ├─ __init__.py
 │  ├─ dash_app.py
 │  ├─ chart_updater.py
 │  ├─ ws_server.py
@@ -82,12 +121,13 @@ Flag-Zone-Bo├─ .github/
 │  │  └─ theme.py
 │  ├─ assets/
 │  │  ├─ style.css
+│  │  ├─ object_styles.py
 │  │  └─ object_styles.json
 │  └─ about_this_dash_folder.txt
 ├─ .gitignore
 ├─ buy_option.py
 ├─ config.json
-├─ cred.py
+├─ cred.py # cred-example.py, replace vars - change file name too `cred.py`
 ├─ data_acquisition.py
 ├─ economic_calender_scraper.py
 ├─ error_handler.py

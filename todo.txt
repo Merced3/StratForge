@@ -6,4 +6,8 @@ NEXT THING TO WORK ON:
 [x] frontend works enough, the objects display.
 [ ] Get the historical chart PNG file to show what we see on web_dash.
 [ ] Get the EMA's to work with the live chart
-[ ] Auto heal doesn't work correctly, it gets the correct 15m data but it doesn't check if market was closed early and just returns from hard coded conventional market open times and closed times (8:30am to 3pm san antonio time) 
+[ ] Auto heal doesn't work correctly, it gets the correct 15m data but it doesn't check if market was closed early and just returns from hard coded conventional market open times and closed times (8:30am to 3pm san antonio time)
+
+I can't test anything because most of my storage folder, I need to go home and tranfer a bunch of data Manually.
+fill in cred.py as it was deleted and not tracked.
+fill in storage folder alot of folders werent tracked.

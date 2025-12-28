@@ -4,7 +4,7 @@ Everything the new storage system works, just need to get the display/frontend t
 
 NEXT THING TO WORK ON:
 [x] frontend works enough, the objects display.
-[ ] Get the historical chart PNG file to show what we see on web_dash.
+[x] Get the historical chart PNG file to show what we see on web_dash.
 [ ] Get the EMA's to work with the live chart
 [ ] Auto heal doesn't work correctly, it gets the correct 15m data but it doesn't check if market was closed early and just returns from hard coded conventional market open times and closed times (8:30am to 3pm san antonio time)
 

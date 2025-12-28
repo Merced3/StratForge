@@ -86,8 +86,9 @@ def draw_objects(fig, df_o: pd.DataFrame, df_c: pd.DataFrame, tf_minutes: int, v
         gx_ts = gx_ts_override if gx_ts_override is not None else _gx_lookup(df_c)
         if gx_ts.empty or df_c.empty:
             return
+        is_numeric = pd.api.types.is_numeric_dtype(gx_ts)
         start_ts = None  # per-object via `_start_ts_from_left()`
-        end_ts = df_c["_ts_plot"].iloc[-1] + pd.Timedelta(minutes=tf_minutes)
+        end_ts = (float(gx_ts.max()) + 1.0) if is_numeric else df_c["_ts_plot"].iloc[-1] + pd.Timedelta(minutes=tf_minutes)
 
     for _, obj in df_o.iterrows():
         if variant == "live":

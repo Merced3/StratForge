@@ -5,7 +5,7 @@
     "resistance": {"line": "#ef4444", "fill": "#fecdd3"}
   },
   "variants": {
-    "zones": {"level_width": 1,   "zone_opacity": 0.50},
-    "live":  {"level_width": 1.2, "zone_opacity": 0.20}
+    "zones": {"level_width": 1,   "zone_opacity": 0.65},
+    "live":  {"level_width": 1.2, "zone_opacity": 0.65}
   }
 }

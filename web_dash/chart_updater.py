@@ -1,5 +1,5 @@
 # web_dash/chart_updater.py
-from paths import get_chart_path, pretty_path
+from paths import get_chart_path
 import plotly.graph_objects as go
 import plotly.io as pio
 from web_dash.charts.live_chart import generate_live_chart
@@ -25,7 +25,7 @@ def update_chart(timeframe="2M", chart_type="live", notify=False):
         fig.update_layout(
             template=None,
             uirevision=None,
-            xaxis=dict(type="category"),   # <-- was "date" (wrong for zones)
+            xaxis=dict(type="linear"),
         )
     elif chart_type == "live":
         fig = _as_figure(generate_live_chart(timeframe))

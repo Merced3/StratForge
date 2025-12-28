@@ -16,35 +16,23 @@ def _tf_minutes(tf: str) -> int:
     m = re.search(r"(\d+)\s*[mM]", tf)
     return int(m.group(1)) if m else 15
 
-def _apply_market_rangebreaks(fig: go.Figure):
-    # kill weekends + overnight gaps so days sit flush
-    fig.update_xaxes(
-        rangebreaks=[
-            dict(bounds=["sat", "mon"]),
-            dict(bounds=[16, 9.5], pattern="hour"),
-        ],
-        showgrid=False,
-    )
-
-def _add_day_bands(fig: go.Figure, ts_plot: pd.Series, tf_minutes: int, opacity=0.40):
-    # assumes df_c['ts'] exists (ISO with tz per your storage contract)
-    dates = ts_plot.dt.floor("D")
+def _add_day_bands(fig: go.Figure, x_pos: pd.Series, dates: pd.Series, opacity=0.40):
+    dates = pd.Series(dates)
     for i, d in enumerate(pd.unique(dates)):
         mask = dates == d
         if not mask.any():
             continue
-        x0 = ts_plot[mask].min()
-        x1 = ts_plot[mask].max() + pd.Timedelta(minutes=tf_minutes)
+        x0 = float(x_pos[mask].min()) - 0.5
+        x1 = float(x_pos[mask].max()) + 0.5
         color = "#f1f3f5" if i % 2 == 0 else "#ffffff"
         fig.add_vrect(x0=x0, x1=x1, fillcolor=color, opacity=opacity,
                       layer="below", line_width=0)
 
 def generate_zones_chart(timeframe: str = "15m", days: int = 10):
-    #print(f"\n[zones_chart] timeframe: {timeframe}, days: {days}")
     symbol = read_config("SYMBOL")
     t0, t1, picked = days_window(timeframe, days)
 
-    # 1) Pull BOTH dayfiles and parts so days aren’t missing candles
+    # 1) Don't pull parts, only dayfiles (parts for live chart)
     df_c, df_o = load_viewport(
         symbol=symbol, timeframe=timeframe,
         t0_iso=t0, t1_iso=t1,
@@ -63,7 +51,7 @@ def generate_zones_chart(timeframe: str = "15m", days: int = 10):
     # Empty case
     if df_c.empty:
         empty = go.Figure().update_layout(
-            title=f"{symbol} — Zones ({timeframe}) — no data",
+            title=f"{symbol} -- Zones ({timeframe}) -- no data",
             height=700, xaxis_rangeslider_visible=False
         )
         return dcc.Graph(figure=empty, style={"height": "700px"})
@@ -74,24 +62,52 @@ def generate_zones_chart(timeframe: str = "15m", days: int = 10):
     ts_plot = ts_et.dt.tz_localize(None)
     df_c = df_c.assign(_ts_plot=ts_plot, _et_date=ts_plot.dt.date)  # _et_date only for debug/stats
 
+    # Integer x positions (zero-based). Prefer global_x when available.
+    if "global_x" in df_c and df_c["global_x"].notna().any():
+        first_gx = int(df_c["global_x"].dropna().iloc[0])
+        x_int = (df_c["global_x"].ffill().bfill() - first_gx).astype(int)
+    else:
+        x_int = pd.Series(range(len(df_c)), index=df_c.index)
+    df_c = df_c.assign(_x_int=x_int)
+
+    # Map original global_x -> integer x for object alignment
+    gx_map = (
+        df_c.dropna(subset=["global_x", "_x_int"])
+            .drop_duplicates("global_x")
+            .set_index("global_x")["_x_int"]
+    )
 
     # 4) Candles
     # Use naive ET timestamps so rangebreaks don’t remove midday bars
-    x = ts_plot
+    hovertext = [
+        f"{ts:%b %d %Y %H:%M}<br>O {o}<br>H {h}<br>L {l}<br>C {c}"
+        for ts, o, h, l, c in zip(df_c["_ts_plot"], df_c["open"], df_c["high"], df_c["low"], df_c["close"])
+    ]
     fig = go.Figure(go.Candlestick(
-        x=x,
+        x=df_c["_x_int"],
         open=df_c["open"], high=df_c["high"], low=df_c["low"], close=df_c["close"],
         increasing_line_color=GREEN, decreasing_line_color=RED,
         increasing_fillcolor=GREEN, decreasing_fillcolor=RED,
+        hovertext=hovertext,
+        hoverinfo="text",
         name="Price",
     ))
 
     # 5) Remove gaps + add day stripes + overlay objects
-    _apply_market_rangebreaks(fig)
-    _add_day_bands(fig, df_c["_ts_plot"], _tf_minutes(timeframe))
-    draw_objects(fig, df_o, df_c, _tf_minutes(timeframe), variant="zones")
+    _add_day_bands(fig, df_c["_x_int"], df_c["_et_date"])
+    draw_objects(fig, df_o, df_c, _tf_minutes(timeframe), variant="zones", gx_ts_override=gx_map)
 
+    # Integer axis with date ticks at the first bar of each day
+    day_ticks = df_c.groupby("_et_date")["_x_int"].first()
+    fig.update_xaxes(
+        type="linear",
+        tickmode="array",
+        tickvals=day_ticks.values,
+        ticktext=pd.to_datetime(day_ticks.index).strftime("%b %d"),
+        showgrid=False,
+    )
+    
     # 6) Layout polish
-    apply_layout(fig, title=f"{symbol} — Historical ({timeframe.upper()})", uirevision="zones")
+    apply_layout(fig, title=f"{symbol} -- Historical ({timeframe.upper()})", uirevision="zones")
 
     return dcc.Graph(figure=fig, style={"height": "700px"})

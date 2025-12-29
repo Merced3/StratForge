@@ -14,6 +14,7 @@ except ModuleNotFoundError:
     cred = None  # fine for tests; any runtime path that needs cred must handle None
 
 import argparse
+import pandas_market_calendars as mcal
 from typing import Optional
 import pandas as pd
 from shared_state import print_log
@@ -34,6 +35,7 @@ from storage.objects.io import (      # Parquet-backed storage helpers
 import pytz
 from tools.compact_parquet import _last_global_index
 from tools.normalize_ts_all import normalize_file
+from tools.audit_candles import _get_nyse_session_bounds, _read_day_ts_series, _find_missing_intervals
 
 # What zones mean:
 # 🔁 Support = “Too few sellers to push lower”
@@ -661,41 +663,6 @@ def get_objects():
         pass
     return [], []   # <- ensure callers always get two lists
 
-def _read_day_ts_series(day_path: Path) -> pd.Series:
-    """Read a dayfile's ts as tz-aware NY datetimes, sorted ascending."""
-    df = pd.read_parquet(day_path, columns=["ts"]).sort_values("ts")
-    ts = df["ts"]
-    # normalize to tz-aware UTC then to NY
-    if pd.api.types.is_integer_dtype(ts) or pd.api.types.is_float_dtype(ts):
-        ts = pd.to_datetime(ts, unit="ms", utc=True)
-    else:
-        ts = pd.to_datetime(ts, utc=True)
-    return ts.dt.tz_convert("America/New_York").reset_index(drop=True)
-
-def _find_missing_15m_intervals(ts_series: pd.Series) -> list[pd.Timestamp]:
-    """
-    Return the list of EXPECTED timestamps missing between consecutive rows,
-    assuming perfect 15m cadence starting from the series' first timestamp.
-    """
-    if ts_series.empty:
-        return []
-
-    missing = []
-    prev = ts_series.iloc[0]
-    # Optional: sanity that first candle aligns on :00/:15/:30/:45
-    # and commonly starts 09:30 NY. We don't fail on this — cadence is king.
-    for curr in ts_series.iloc[1:]:
-        delta = curr - prev
-        step = pd.Timedelta(minutes=15)
-        if delta > step:
-            # generate all missing stamps between prev and curr (exclusive)
-            t = prev + step
-            while t < curr:
-                missing.append(t)
-                t += step
-        prev = curr
-    return missing
-
 def _rebuild_current_snapshot_asof_day(cutoff_day: str) -> None:
     """
     Rebuild CURRENT snapshot from all timeline files with YYYY-MM-DD <= cutoff_day.
@@ -825,14 +792,21 @@ async def pull_and_replace_15m(days_back: int = 1, day_override: Optional[str] =
     print_log(f"[HEAL] Checking 15m data for target day: `{day_str}`")
 
     gaps = []
+    missing = []
+    extras = []
+    session_open, session_close = _get_nyse_session_bounds(day_str)
+    print_log(f"[HEAL] Expected NYSE session: {session_open} to {session_close}")
     if day_path.exists():
         ts_series = _read_day_ts_series(day_path)
-        gaps = _find_missing_15m_intervals(ts_series)
-
-        # (Optional) also ensure first bar aligns to :30  (09:30 NY is common)
-        # if ts_series.iloc[0].hour == 9 and ts_series.iloc[0].minute != 30:
-        #     # treat as a gap at the start (informational)
-        #     print_log(f"[HEAL] First bar unusual start: {ts_series.iloc[0]}")
+        missing, extras = _find_missing_intervals(
+            ts_series,
+            step_minutes=15,
+            expected_open=session_open,
+            expected_close=session_close,
+        )
+        if extras:
+            print_log(f"[HEAL] Found {len(extras)} out-of-session 15m bars (first={extras[0]}, last={extras[-1]})")
+        gaps = missing + extras
     else:
         print_log(f"[HEAL] No dayfile for {day_str} — treating as missing.")
         gaps = [None]  # force repair
@@ -850,9 +824,14 @@ async def pull_and_replace_15m(days_back: int = 1, day_override: Optional[str] =
         # 4) final sanity
         try:
             ts_series2 = _read_day_ts_series(day_path)
-            post_gaps = _find_missing_15m_intervals(ts_series2)
-            if post_gaps:
-                print_log(f"[HEAL] WARN: Gaps still detected after repair: {len(post_gaps)}")
+            post_missing, post_extras = _find_missing_intervals(
+                ts_series2,
+                step_minutes=15,
+                expected_open=session_open,
+                expected_close=session_close,
+            )
+            if post_missing or post_extras:
+                print_log(f"[HEAL] WARN: Gaps after repair — missing={len(post_missing)}, extras={len(post_extras)}")
             else:
                 print_log(f"[HEAL] Repair complete for {day_str} (no gaps).")
         except Exception:
@@ -898,6 +877,8 @@ async def create_daily_15m_parquet(file_day_name: str):
     #    (data_acquisition already converts to America/New_York tz)
     if df["timestamp"].dt.tz is None:
         df["timestamp"] = df["timestamp"].dt.tz_localize(pytz.timezone("America/New_York"))
+    # We filter in America/New_York, but we STORE in UTC (ts epoch ms + ts_iso Z)
+    # to avoid DST ambiguity, keep ordering/global_x stable, and align with normalize_ts_all.
     ts_iso = df["timestamp"].apply(lambda ts: ts.isoformat())
 
     # 4) Build output DataFrame in required order
@@ -1009,15 +990,16 @@ OPTIONAL: NORMALIZE DAYFILES FROM THE CLI (one-off)
         `python tools/normalize_ts_all.py --root storage/data --recurse --verbose`
 
 NUCLEAR OPTION (full rebuild of timeline + current)
-- Only if you truly want a clean slate. Remove all timeline files (and optionally the current snapshot parquet), then backfill everything:
+- Only if you truly want a clean slate. Remove all timeline files:
     (Windows PowerShell)
     Remove-Item -Recurse -Force .\storage\objects\timeline
-    New-Item -ItemType Directory .\storage\objects\timeline | Out-Null
-
-- Optional: Remove-Item -Force .\storage\objects\current.parquet
-    `python objects.py`
+- Remove current snapshot:
+    Remove-Item -Force .\storage\objects\current.parquet
+- Run full backfill:
+    python objects.py
 
 TIPS / NOTES
+- Dayfiles are stored in UTC (ts epoch ms + ts_iso Z). We filter in America/New_York first, then write UTC to avoid DST ambiguity (daylight savings transitions, Fall-back and Spring-forward) and keep global_x/order consistent.
 - After midnight, ALWAYS prefer: python objects.py pull-replace --day YYYY-MM-DD
 - Volumes in 15m dayfiles are intentionally 0.0 to match historical format.
 - Market open assumed 09:30 America/New_York; cadence check uses 15-minute steps, so half-days are handled naturally.
@@ -1057,7 +1039,7 @@ if __name__ == "__main__":
     elif args.cmd == "eod":
         process_end_of_day_15m_candles_for_objects()
     elif args.cmd == "pull-replace":
-        asyncio.run(pull_and_replace_15m(days_back=args.days_back))
+        asyncio.run(pull_and_replace_15m(days_back=args.days_back, day_override=args.day))
     elif args.cmd == "rebuild-snapshot":
         rebuild_snapshot_from_timeline(
             max_step=args.max_step,

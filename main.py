@@ -275,7 +275,7 @@ async def main_loop():
     # Track whether we actually ran trading work (so we only run EOD once)
     did_run_intraday = False
 
-    # 🚀 BEGIN main loop (strictly before close)
+    # BEGIN main loop (strictly before close)
     while datetime.now(new_york) <= market_close_time: # note: '<' not '<='
         try:
             current_time = datetime.now(new_york)

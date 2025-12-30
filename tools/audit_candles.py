@@ -8,6 +8,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import argparse
+import datetime
 import pandas as pd
 import pandas_market_calendars as mcal
 from typing import Optional
@@ -49,6 +50,22 @@ def _get_nyse_session_bounds(day_str: str, tz: str = "America/New_York") -> tupl
     except Exception as e:
         print_log(f"[HEAL] Could not load NYSE schedule for {day_str}: {e}")
         return None, None
+
+def find_missing_days(base: Path, tz="America/New_York", max_age_days: int | None = None) -> list[str]:
+    files = sorted(base.glob("*.parquet"))
+    have = {p.stem for p in files}
+    if not have:
+        return []
+    start = min(have)
+    end = max(have)
+    # optional window clamp
+    if max_age_days:
+        cutoff = (pd.Timestamp("today").normalize() - pd.Timedelta(days=max_age_days)).strftime("%Y-%m-%d")
+        start = max(start, cutoff)
+    cal = mcal.get_calendar("NYSE")
+    sched = cal.schedule(start_date=start, end_date=end)
+    expected = {d.strftime("%Y-%m-%d") for d in sched.index}
+    return sorted(expected - have)
 
 def _find_missing_intervals(
     ts_series: pd.Series,
@@ -131,33 +148,6 @@ def audit_dayfile(day_path: Path, tf_minutes: int, tz: str = "America/New_York")
         "gx_len": gx_res.get("len"),
     }
 
-def audit_with_chain(base: Path, tf_minutes: int, pattern="*.parquet"):
-    files = sorted(base.glob(pattern))
-    chain_expected = None
-    bad_candles, bad_gx, chain_breaks = [], [], []
-    for p in files:
-        day = p.stem
-        gx_res = _check_global_x(p)
-        if not gx_res["ok"]:
-            bad_gx.append(day)
-        # candle audit (missing/extras)
-        ts = _read_day_ts_series(p)
-        o, c = _get_nyse_session_bounds(day)
-        missing, extras = _find_missing_intervals(ts, tf_minutes, o, c)
-        
-        # If day is outside of polygon window, save those dates too a var to print at the end of calculation.
-        
-        if missing or extras:
-            bad_candles.append(day)
-        # chain continuity
-        if chain_expected is None:
-            chain_expected = gx_res["last"] + 1
-            continue
-        if gx_res["first"] != chain_expected:
-            chain_breaks.append(day)
-        chain_expected = gx_res["last"] + 1
-    return bad_candles, bad_gx, chain_breaks
-
 def within_polygon_window(day_str: str, max_age_days: int) -> bool:
     cutoff = pd.Timestamp("today").normalize() - pd.Timedelta(days=max_age_days)
     return pd.to_datetime(day_str) >= cutoff
@@ -187,6 +177,7 @@ def main():
     ap.add_argument("--recurse", action="store_true", help="Recurse into subfolders (e.g., part-*.parquet)")
     ap.add_argument("--limit", type=int, default=None, help="Stop after N files per timeframe (debug)")
     ap.add_argument("--tz", default="America/New_York", help="Timezone for session bounds (default: America/New_York)")
+    ap.add_argument("--max-age-days", type=int, default=1825, help="Optional window (days) for missing-day check; default 5 years")
     ap.add_argument("--verbose", action="store_true", help="Print per-file results when issues are found")
     args = ap.parse_args()
 
@@ -203,6 +194,7 @@ def main():
         scanned = errors = 0
         bad_candles, bad_gx = [], []
         day_edges: dict[str, tuple[int, int]] = {}
+        early_closes = 0
 
         for i, p in enumerate(sorted(files), start=1):
             if args.limit and i > args.limit:
@@ -210,6 +202,12 @@ def main():
             try:
                 res = audit_dayfile(p, tf_minutes, tz=args.tz)
                 scanned += 1
+
+                sc = res["session_close"]
+                if sc is not None:
+                    close_local = sc.tz_convert(args.tz).time()
+                    if close_local < datetime.time(16, 0):
+                        early_closes += 1
 
                 # stash edges for chain analysis
                 day_edges[res["day"]] = (res["gx_first"], res["gx_last"])
@@ -232,10 +230,16 @@ def main():
                 print_log(f"[AUDIT] error on {p}: {e}")
 
         chain_breaks = _chain_breaks(day_edges)
-        totals.append((tf, scanned, len(bad_candles), len(bad_gx), len(chain_breaks), errors))
+        
+        missing_days = find_missing_days(base, tz=args.tz, max_age_days=args.max_age_days)
+        print_log(f"[AUDIT] missing_dayfiles={len(missing_days)}")
+        if args.verbose and missing_days:
+            print_log(f"         missing sample: {missing_days[:10]}")
+        
+        totals.append((tf, scanned, len(bad_candles), len(bad_gx), len(chain_breaks), early_closes, errors))
         print_log(
             f"[AUDIT] tf={tf}: scanned={scanned}, candle_issues={len(bad_candles)}, "
-            f"gx_issues={len(bad_gx)}, chain_breaks={len(chain_breaks)}, errors={errors}"
+            f"gx_issues={len(bad_gx)}, chain_breaks={len(chain_breaks)}, early_closes={early_closes}, errors={errors}"
         )
 
     print_log(f"[AUDIT] done. totals={totals}")

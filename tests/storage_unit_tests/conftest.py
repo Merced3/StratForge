@@ -31,6 +31,8 @@ def tmp_storage(tmp_path, monkeypatch):
     # reload so imports pick up patched paths
     importlib.reload(importlib.import_module("storage.objects.io"))
     importlib.reload(importlib.import_module("storage.viewport"))
+    importlib.reload(importlib.import_module("tools.candles_io"))
+    importlib.reload(importlib.import_module("tools.compact_parquet"))
 
     yield types.SimpleNamespace(DATA_DIR=data_dir, OBJECTS_DIR=objects_dir)
 

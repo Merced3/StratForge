@@ -7,6 +7,7 @@ import asyncio
 import cred
 import aiohttp
 import json
+import pandas_market_calendars as mcal
 import pytz
 import time
 from datetime import datetime
@@ -20,6 +21,18 @@ from paths import pretty_path, get_merged_ema_csv_path, MARKERS_PATH
 RETRY_INTERVAL = 1  # Seconds between reconnection attempts
 should_close = False  # Global variable to signal if the WebSocket should close
 active_provider = "tradier" # global variable to track active provider
+
+def _nyse_session(day_str: str):
+    cal = mcal.get_calendar("NYSE")
+    sched = cal.schedule(start_date=day_str, end_date=day_str)
+    if sched.empty:
+        return None, None
+    row = sched.iloc[0]
+    # keep tz-aware NY times
+    return (
+        row["market_open"].tz_convert("America/New_York"),
+        row["market_close"].tz_convert("America/New_York"),
+    )
 
 async def ws_auto_connect(queue, provider, symbol):
     """
@@ -406,16 +419,18 @@ async def get_certain_candle_data(api_key, symbol, interval, timescale, start_da
             df = pd.DataFrame(data['results'])
             df['timestamp'] = pd.to_datetime(df['t'], unit='ms').dt.tz_localize('UTC').dt.tz_convert(pytz.timezone('America/New_York'))
 
-            # Filter DataFrame based on market type using full datetime boundaries
-            market_open_dt = df['timestamp'].dt.normalize() + pd.Timedelta(hours=9, minutes=30)
-            market_close_dt = df['timestamp'].dt.normalize() + pd.Timedelta(hours=16)
+            # session bounds per day (handles half-days)
+            session_open, session_close = _nyse_session(start_date)
+            if session_open is None or session_close is None:
+                print_log(f"{indent(indent_lvl)}[GCCD] {start_date} not a NYSE session; isn’t a trading day, skipping.")
+                return None
             
             if market_type == 'PREMARKET':
-                df = df[df['timestamp'] <= market_open_dt]
+                df = df[df['timestamp'] < session_open]
             elif market_type == 'MARKET':
-                df = df[(df['timestamp'] >= market_open_dt) & (df['timestamp'] < market_close_dt)] 
+                df = df[(df['timestamp'] >= session_open) & (df['timestamp'] < session_close)] 
             elif market_type == 'AFTERMARKET':
-                df = df[df['timestamp'] >= market_close_dt]
+                df = df[df['timestamp'] >= session_close]
             # For 'ALL', no filtering is needed
 
             start_time = df['timestamp'].iloc[0].strftime('%H:%M:%S')

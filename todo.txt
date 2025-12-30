@@ -7,7 +7,7 @@ NEXT THING TO WORK ON:
 [x] Get the historical chart PNG file to show what we see on web_dash.
 [ ] Get the EMA's to work with the live chart
 [x] Auto heal doesn't work correctly, it gets the correct 15m data but it doesn't check if market was closed early and just returns from hard coded conventional market open times and closed times (8:30am to 3pm san antonio time)
-[-] Make a script that audits ALL of 15m parquet day files. make sure it checks if there half days/full days or whatever, also that there are no gaps, 
+[x] Make a script that audits ALL of 15m parquet day files. make sure it checks if there half days/full days or whatever, also that there are no gaps and it can repiar the bad data.
 [ ] change main functionality so that candles record correct timestamps, NY Session time, not relative.
 
 Key: `x` = done/working, `-` = pending/developing currently
@@ -16,15 +16,9 @@ I can't test anything because most of my storage folder, I need to go home and t
 fill in cred.py as it was deleted and not tracked.
 fill in storage folder alot of folders werent tracked.
 
+When on main machine:
+1) Run `python tools/audit_candles.py --timeframes 15m --verbose` to audit all candles (missing days, gaps/extras, early closes).
+2) Run `python tools/repair_candles.py --timeframe 15m --max-age-days 1825` to repair what the audit found (flip clean_files_active=True when ready).
+3) Delete storage/objects/current and storage/objects/timeline for a clean slate.
+4) Run `python objects.py` to rebuild all objects from the verified, cleaned data.
 
-When on main computer:
-1) Make sure to upgrade the `kaleido`:
-    `python -m pip install --upgrade "kaleido>=1.0.0"`
-    THEN: `python -c "from web_dash.chart_updater import update_chart; update_chart(timeframe='15m', chart_type='zones', notify=False); print('zones png written')"`
-    That should fix the 15min historical candle data image
-
-2) run `tools/X` script that audits all the 15m candles to make sure the data is correct.
-    It checks if the candle data is truely clean so we know every day after the fact is runnning
-    based off the clean data from previous days. Then:
-3) delete objects current and timeline folders. for clean slate for next thing.
-4) run `python objects.py` to refill ALL objects based off verified cleaned data.

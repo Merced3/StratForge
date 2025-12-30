@@ -450,3 +450,7 @@ async def get_certain_candle_data(api_key, symbol, interval, timescale, start_da
         print_log(f"{indent(indent_lvl)}[GCCD] An unexpected error occurred: {e}")
 
     return None
+
+#if __name__ == "__main__":
+    #session_open, session_close = _nyse_session("2025-12-30")
+    #print(f"Market open: {session_open}, Market close: {session_close}")

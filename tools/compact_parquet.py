@@ -10,6 +10,7 @@ if str(ROOT) not in sys.path:
 import paths  # centralized paths
 import argparse
 import pandas as pd
+from tools.candles_io import _last_global_index
 
 """
 How you’ll use it:
@@ -119,40 +120,6 @@ def compact_day(timeframe: str, day: str, delete_parts: bool = True) -> dict:
     if tf == "15m" and start_gx is not None:
         res.update({"start_global_x": start_gx, "end_global_x": end_gx})
     return res
-
-def _parquet_has_column(path: Path, col: str) -> bool:
-    """Fast schema check without loading the whole file."""
-    try:
-        import pyarrow.parquet as pq
-        return col in pq.ParquetFile(path).schema.names
-    except Exception:
-        # Fallback: try reading just the column; if it fails, it's missing.
-        try:
-            df = pd.read_parquet(path, columns=[col])
-            return col in df.columns
-        except Exception:
-            return False
-
-def _last_global_index(tf: str, day: str) -> int:
-    """Find last known global_x before this day."""
-    tf_dir = paths.DATA_DIR / tf
-    # All previous daily parquet files
-    prev = sorted(tf_dir.glob("*.parquet"))
-    prev_days = [p for p in prev if p.stem < day]
-    if not prev_days:
-        return -1
-    last_file = prev_days[-1]
-    if not _parquet_has_column(last_file, "global_x"):
-        return -1
-    
-    try:
-        # Read only the needed column
-        df = pd.read_parquet(last_file, columns=["global_x"])
-        if len(df) == 0:
-            return -1
-        return int(df["global_x"].max())
-    except Exception:
-        return -1
 
 def compact_month_objects(timeframe: str, year_month: str, delete_parts: bool = True) -> dict:
     """

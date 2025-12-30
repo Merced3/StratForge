@@ -1066,5 +1066,17 @@
         "num_of_negitive_trades": 0,
         "description": "Day 1, data collection was good, no issues except for a websocket hickup that we recovered from, no candles affected, FINALLY MERGED NEW FRONTEND, only took 10 weeks of dev while working full time at the same time, the saving of the new obects chart (levels/zones) is showing something wrong because the zones and levels are ending at different points which is weird, the actual website looks fine too me but idk why the 15m historical (objects) chart looks different PNG wise, will fix that tomorrow, if i have time. Day 2, first day of running new code, we had a ema issue, had to remove that block of code but works, need to be able to put all the storage data in a online drive port so i can expirement whenever I want, data collection was good tho. Day 3, christmas eve, wasn't able to work on program today, the program doesn't have a way to tell if market ends early hence the weird looking candles toward the end of day, will find a way later on. Day 4, market closed, christmas. Day 5, data collection good, no errors other than some frontend stuff that needs to be tweeked.",
         "important_message_ids": []
+    },
+    {
+        "week_number": 88,
+        "week_start_end_date": "12/29/2025-01/02/2025",
+        "start_ammount": 39174.0,
+        "end_ammount": 39174.0,
+        "total_made": 0.0,
+        "num_of_trades": 0,
+        "num_of_profitable_trades": 0,
+        "num_of_negitive_trades": 0,
+        "description": "Day 1, My bday, data collection was good, no issues, got more of the backend done today, git commit history will do a better ob of explaining it all but all good updates.",
+        "important_message_ids": []
     }
 ]

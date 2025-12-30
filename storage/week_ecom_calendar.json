@@ -1,10 +1,9 @@
 {
-    "week_timespan": "12-22-25 to 12-28-25",
+    "week_timespan": "12-29-25 to 01-04-26",
     "dates": {
-        "12-23-25": {
-            "07:30 AM": [
-                "Durable Goods Orders MoM",
-                "GDP Growth Rate QoQ 2nd Est"
+        "12-30-25": {
+            "01:00 PM": [
+                "FOMC Minutes"
             ]
         }
     }

@@ -1076,7 +1076,7 @@
         "num_of_trades": 0,
         "num_of_profitable_trades": 0,
         "num_of_negitive_trades": 0,
-        "description": "Day 1, My bday, data collection was good, no issues, got more of the backend done today, git commit history will do a better ob of explaining it all but all good updates.",
+        "description": "Day 1, My bday, data collection was good, no issues, got more of the backend done today, git commit history will do a better ob of explaining it all but all good updates. Day 2, another day of another good data collection, I was also working from home and have finished the candles audit and repair script to make sure we have clean data to work off of.",
         "important_message_ids": []
     }
 ]

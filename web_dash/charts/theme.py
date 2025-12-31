@@ -1,7 +1,11 @@
 # web_dash/charts/theme.py
-PAPER_BG = "#f7f8fa"   # matches assets/style.css body bg
-PLOT_BG  = "#fdfdfd"
-GRID     = "#eaecef"
+
+# Color theme for charts
+PAPER_BG = "#dfe3e8"   # overall page bg
+PLOT_BG  = "#d4d8df"   # darker plot area so bright lines pop
+GRID     = "#b8c0cb"   # thin grid that stays visible on the darker plot bg
+
+# Candle colors
 GREEN    = "#16a34a"
 RED      = "#ef4444"
 

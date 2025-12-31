@@ -1,7 +1,6 @@
 # web_dash/charts/live_chart.py
 from __future__ import annotations
 import re
-import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 from dash import dcc
@@ -11,8 +10,8 @@ from storage.viewport import load_viewport, get_timeframe_bounds
 from web_dash.charts.theme import apply_layout, GREEN, RED
 from web_dash.assets.object_styles import draw_objects
 
-#from paths import get_ema_path
-#from utils.ema_utils import load_ema_json
+from paths import get_ema_path
+from utils.ema_utils import load_ema_json
 
 _BAR_MINUTES_RE = re.compile(r"(\d+)\s*[mM]")
 TZ = "America/New_York"
@@ -101,41 +100,55 @@ def generate_live_chart(timeframe: str):
     ts_et = ts_local.dt.tz_convert(TZ)
     df_candles["_ts_plot"] = ts_et.dt.tz_localize(None)
 
-    # Debug
-    #print(f"[live_chart] candles={len(df_candles)} objects={len(df_objects)}")
+    # Integer x positions (simple 0..N-1 for live parts)
+    x_vals = pd.Series(range(len(df_candles)), index=df_candles.index)
+    df_candles["_x_int"] = x_vals
+    x_min, x_max = int(x_vals.min()), int(x_vals.max())
 
     # --- plot ---
     fig = go.Figure()
-    candlex = df_candles["_ts_plot"].to_numpy() #candlex = np.array(df_candles["_ts_plot"].dt.to_pydatetime(), dtype=object)
+    candlex = df_candles["_x_int"].to_numpy()
+    hovertext = [
+        f"{ts:%b %d %Y %H:%M}<br>O {o}<br>H {h}<br>L {l}<br>C {c}"
+        for ts, o, h, l, c in zip(df_candles["_ts_plot"], df_candles["open"], df_candles["high"], df_candles["low"], df_candles["close"])
+    ]
     fig.add_trace(go.Candlestick(
         x=candlex,
         open=df_candles["open"], high=df_candles["high"],
         low=df_candles["low"], close=df_candles["close"],
         increasing_line_color=GREEN, decreasing_line_color=RED,
         increasing_fillcolor=GREEN, decreasing_fillcolor=RED,
+        hovertext=hovertext, hoverinfo="text",
         name="Price",
     ))
 
     # Draw EMAs
-    """
-    ema_path = get_ema_path(tf.upper()) # get_ema_path() is a older function that runs off of the old uppercase naming convention, will change if need be.
+    ema_path = get_ema_path(timeframe.upper())
     ema_raw = load_ema_json(ema_path)
-    ema_df = pd.DataFrame(ema_raw) if isinstance(ema_raw, list) else ema_raw
-    if ema_df is not None and not ema_df.empty and "ts" in ema_df.columns:
-        ema_df["timestamp"] = pd.to_datetime(ema_df["ts"], errors="coerce")
-        merged = pd.merge_asof(
-            df_candles.sort_values("timestamp"), 
-            ema_df.sort_values("timestamp"),
-            on="timestamp"
-        )
-        for col in [c for c in ema_df.columns if str(c).lower().startswith("ema") or str(c).isdigit()]:
+    ema_df = pd.DataFrame(ema_raw) if isinstance(ema_raw, list) else pd.DataFrame()
+    if not ema_df.empty and "x" in ema_df.columns:
+        ema_df = ema_df.copy()
+        ema_df["x"] = pd.to_numeric(ema_df["x"], errors="coerce")
+        ema_df = ema_df.dropna(subset=["x"]).sort_values("x")
+
+        # Align EMA x-values so the latest EMA lines up with the latest candle in view
+        base_x = float(ema_df["x"].max()) - (len(df_candles) - 1)
+        ema_df["_x_int"] = ema_df["x"] - base_x
+        ema_df = ema_df[ema_df["_x_int"].between(x_min - 2, x_max + 2)]
+
+        ema_colors = {str(w): color for w, color in (read_config("EMAS") or [])}
+        value_cols = [c for c in ema_df.columns if c not in {"x", "_x_int", "ts", "timestamp"}]
+        for col in value_cols:
+            y_vals = pd.to_numeric(ema_df[col], errors="coerce")
+            if y_vals.isna().all():
+                continue
             fig.add_trace(go.Scatter(
-                x=candlex, y=merged[col],
-                mode="lines", name=col.upper(),
-                line=dict(width=1.4, color="#1d4ed8"),
-                yaxis="y", hoverinfo="skip",
+                x=ema_df["_x_int"], y=y_vals,
+                mode="lines", name=str(col).upper(),
+                line=dict(width=1.4, color=ema_colors.get(str(col), "#1d4ed8")),
+                yaxis="y",
+                hovertemplate=f"{str(col).upper()} EMA: %{{y:.2f}}<extra></extra>",
             ))
-    """
 
     # Draw objects (zones/levels)
     draw_objects(fig, df_objects, df_candles, tf_min, variant="live")
@@ -146,7 +159,8 @@ def generate_live_chart(timeframe: str):
     span = max(visible_max - visible_min, 0.0)
     pad = max(span * 0.05, 0.05)
 
-    apply_layout(fig, title=f"{symbol} — Live ({timeframe.upper()})", uirevision=f"live-{timeframe}")
+    apply_layout(fig, title=f"{symbol} - Live ({timeframe.upper()})", uirevision=f"live-{timeframe}")
+    fig.update_xaxes(type="linear")
     fig.update_yaxes(range=[visible_min - pad, visible_max + pad], autorange=False)
     fig.update_traces(cliponaxis=True, selector=dict(type="scatter"))
 

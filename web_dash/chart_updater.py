@@ -31,11 +31,11 @@ def update_chart(timeframe="2M", chart_type="live", notify=False):
         fig = _as_figure(generate_live_chart(timeframe))
         out = get_chart_path(timeframe)
 
-        # Guardrails for live (datetime x)
+        # Guardrails for live (numeric x)
         fig.update_layout(
             template=None,
             uirevision=None,
-            xaxis=dict(type="date"),
+            xaxis=dict(type="linear"),
         )
     else:
         raise ValueError(f"[update_chart] Invalid chart_type: {chart_type}")

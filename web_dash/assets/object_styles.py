@@ -78,10 +78,16 @@ def draw_objects(fig, df_o: pd.DataFrame, df_c: pd.DataFrame, tf_minutes: int, v
     styles = load_object_styles(variant)
 
     if variant == "live":
-        if df_c.empty or "_ts_plot" not in df_c:
+        if df_c.empty:
             return
-        start_ts = df_c["_ts_plot"].iloc[0]
-        end_ts = df_c["_ts_plot"].iloc[-1] + pd.Timedelta(minutes=tf_minutes)
+        if "_x_int" in df_c and pd.api.types.is_numeric_dtype(df_c["_x_int"]):
+            start_ts = float(df_c["_x_int"].min())
+            end_ts = float(df_c["_x_int"].max()) + 1.0
+        elif "_ts_plot" in df_c:
+            start_ts = df_c["_ts_plot"].iloc[0]
+            end_ts = df_c["_ts_plot"].iloc[-1] + pd.Timedelta(minutes=tf_minutes)
+        else:
+            return
     else:
         gx_ts = gx_ts_override if gx_ts_override is not None else _gx_lookup(df_c)
         if gx_ts.empty or df_c.empty:

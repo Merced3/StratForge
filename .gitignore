@@ -23,7 +23,6 @@ storage/objects/objects.json
 storage/objects/timeline.json
 storage/csv/
 storage/data/
-storage/data 2/
 
 # Keep these JSONs tracked if needed
 !storage/message_ids.json

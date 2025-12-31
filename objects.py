@@ -824,7 +824,7 @@ async def pull_and_replace_15m(days_back: int = 1, day_override: Optional[str] =
     else:
         print_log(f"[HEAL] {day_str} looks complete — no action needed.")
 
-"""
+r"""
 HOW TO RUN & RECOVER (15m dayfiles, timeline, current snapshot)
 
 EVERYDAY PROCESSING

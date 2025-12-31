@@ -17,6 +17,8 @@ NEXT THING TO WORK ON:
     [x] Queue handling: Move `queue.task_done()` inside the message-processing block so each consumed message is accounted for; right now it runs only once after the loop, which can miscount tasks if you ever `join()` the queue.
     [x] Wait logic: Replace the busy loop in `wait_until_market_open` with a single `asyncio.sleep` to the computed delta (clamped at zero) to avoid unnecessary wake-ups.
     [x] State resets: Extract a `reset_day_state()` that resets `current_candles`, `candle_counts`, and `start_times` in one place (initial setup + day rollover) to reduce repetition.
+[x] make unit tests proving the "new" - more efficent `main.py` should work. `runtime/`
+
 Key: `x` = done/working, `-` = pending/developing currently
 
 I can't test anything because most of my storage folder, I need to go home and tranfer a bunch of data Manually.

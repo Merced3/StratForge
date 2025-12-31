@@ -8,7 +8,8 @@ NEXT THING TO WORK ON:
 [ ] Get the EMA's to work with the live chart
 [x] Auto heal doesn't work correctly, it gets the correct 15m data but it doesn't check if market was closed early and just returns from hard coded conventional market open times and closed times (8:30am to 3pm san antonio time)
 [x] Make a script that audits ALL of 15m parquet day files. make sure it checks if there half days/full days or whatever, also that there are no gaps and it can repiar the bad data.
-[ ] change main functionality so that candles record correct timestamps, NY Session time, not relative.
+[x] change main functionality so that candles record correct timestamps, NY Session time, not relative.
+[x] make main.py compliant with dynamic open and close times.
 
 Key: `x` = done/working, `-` = pending/developing currently
 
@@ -19,6 +20,7 @@ fill in storage folder alot of folders werent tracked.
 When on main machine:
 1) Run `python tools/audit_candles.py --timeframes 15m --verbose` to audit all candles (missing days, gaps/extras, early closes).
 2) Run `python tools/repair_candles.py --timeframe 15m --max-age-days 1825` to repair what the audit found (flip clean_files_active=True when ready).
+    optional: you could re-run the audit, just to double check.
 3) Delete storage/objects/current and storage/objects/timeline for a clean slate.
 4) Run `python objects.py` to rebuild all objects from the verified, cleaned data.
 

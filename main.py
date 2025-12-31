@@ -56,6 +56,13 @@ for timeframe in read_config('TIMEFRAMES'):
 # Define New York timezone
 new_york_tz = pytz.timezone('America/New_York')
 
+def normalize_session_times(session_open, session_close):
+    """Convert pandas Timestamps to tz-aware Python datetimes."""
+    if not session_open or not session_close:
+        return None, None
+    to_dt = lambda ts: ts.to_pydatetime() if hasattr(ts, "to_pydatetime") else ts
+    return to_dt(session_open), to_dt(session_close)
+
 current_candle = {
     "open": None,
     "high": None,
@@ -64,7 +71,7 @@ current_candle = {
 }
 
 current_candles = {tf: {"open": None, "high": None, "low": None, "close": None} for tf in read_config('TIMEFRAMES')}
-start_times = {tf: datetime.now() for tf in read_config('TIMEFRAMES')}
+start_times = {tf: datetime.now(new_york_tz) for tf in read_config('TIMEFRAMES')}
 candle_counts = {tf: 0 for tf in read_config('TIMEFRAMES')}
 
 def refresh_chart(timeframe, chart_type="live"):
@@ -78,14 +85,19 @@ def refresh_chart(timeframe, chart_type="live"):
     except Exception as e:
         print_log(f"[refresh_chart] failed: {e}")
 
-async def process_data(queue):
+async def process_data(queue, session_open, session_close):
     print_log("Starting `process_data()`...")
     global current_candles, candle_counts, start_times
     
     # Define initial timestamps for the first day
-    current_day = datetime.now(new_york_tz).date()
-    market_open_time = datetime.now(new_york_tz).replace(hour=9, minute=30, second=0, microsecond=0)
-    market_close_time = datetime.now(new_york_tz).replace(hour=16, minute=0, second=0, microsecond=0)
+    session_open, session_close = normalize_session_times(session_open, session_close)
+    if not session_open or not session_close:
+        print_log("[INFO] No NYSE session provided; skipping process_data.")
+        return
+
+    current_day = session_open.date()
+    market_open_time = session_open
+    market_close_time = session_close
     
     timestamps = {tf: [t.strftime('%H:%M:%S') for t in generate_candlestick_times(market_open_time, market_close_time, timedelta(seconds=CANDLE_DURATION[tf]), True)] for tf in read_config('TIMEFRAMES')}
     buffer_timestamps = {tf: [add_seconds_to_time(t, read_config('CANDLE_BUFFER')) for t in timestamps[tf]] for tf in timestamps}
@@ -98,9 +110,16 @@ async def process_data(queue):
             # Check if the day has changed
             if now.date() != current_day:
                 print_log("[INFO] Detected day change. Recalculating timestamps...")
-                current_day = now.date()
-                market_open_time = now.replace(hour=9, minute=30, second=0, microsecond=0)
-                market_close_time = now.replace(hour=16, minute=0, second=0, microsecond=0)
+                
+                next_open, next_close = data_acquisition._nyse_session(now.strftime("%Y-%m-%d"))
+                session_open, session_close = normalize_session_times(next_open, next_close)
+                if not session_open or not session_close:
+                    print_log("[INFO] No NYSE session for the new day; ending process_data.")
+                    break
+
+                current_day = session_open.date()
+                market_open_time = session_open
+                market_close_time = session_close
 
                 # Recalculate timestamps for the new day
                 timestamps = {tf: [t.strftime('%H:%M:%S') for t in generate_candlestick_times(market_open_time, market_close_time, timedelta(seconds=CANDLE_DURATION[tf]), True)] for tf in read_config('TIMEFRAMES')}
@@ -156,7 +175,7 @@ async def process_data(queue):
                         append_candle(read_config('SYMBOL'), timeframe, current_candle)
                         
                         # ✅ LOG THE CANDLE COUNT BEFORE EMA UPDATES
-                        f_current_time = datetime.now().strftime("%H:%M:%S")
+                        f_current_time = datetime.now(new_york_tz).strftime("%H:%M:%S")
                         candle_counts[timeframe] += 1
                         print_log(f"[{f_current_time}] Candle count for {timeframe}: {candle_counts[timeframe]}")  # Not +1 here
 
@@ -193,55 +212,53 @@ async def initial_setup():
     await print_discord(f"Starting Bot, Real Money Activated" if read_config('REAL_MONEY_ACTIVATED') else f"Starting Bot, Paper Trading Activated")
 
 async def main():
-    new_york = pytz.timezone('America/New_York')
     last_run_date = None  # To track the last date the functions ran
     last_weekend_message_date = None  # To track the last weekend message date
 
     while True:
         try:
             # Get the current time in New York timezone
-            current_time = datetime.now(new_york)
+            current_time = datetime.now(new_york_tz)
             current_date = current_time.date()  # Extract the date (e.g., 2024-06-12)
 
-            # Check if today is Monday to Friday
-            if current_time.weekday() in range(0, 5):  # 0=Monday, 4=Friday
-                # Set target time to 9:20 AM New York time
-                target_time = new_york.localize(
-                    datetime.combine(current_time.date(), datetime.strptime("09:20:00", "%H:%M:%S").time())
-                )
-
-                # Check if it's time to run and hasn't already run today
-                if current_time >= target_time and last_run_date != current_date:
-                    print_log(f"[INFO] Running initial_setup and main_loop at {current_time.strftime('%Y-%m-%d %H:%M:%S')}")
-
-                    # 9:20am: enforce clean EMA state for the day
-                    migrate_ema_state_schema()                            # drop legacy keys like 'seen_ts'
-                    hard_reset_ema_state(read_config('TIMEFRAMES'))       # clear per-TF candle_list + has_calculated
-                    
-                    # At 9:20 am setup everything we need before market open, 10 mins should be enough
-                    await ensure_economic_calendar_data()
-                    refresh_chart("15M", chart_type="zones")
-
-                    # Run the initial setup
-                    await initial_setup()
-                    
-                    # Run the main loop if markets are open
-                    if await is_market_open():
-                        await main_loop() 
-                    else:
-                        print_log(f"Markets are closed today: {current_time.strftime('%m/%d/%Y - %A')}") # "Markets are closed today: 1/1/2025 - Wednesday"
-                        await print_discord("**MARKETS ARE CLOSED TODAY**")
-                        
-                    last_run_date = current_date  # Update the last run date
-
-                    print_log("[INFO] initial_setup and main_loop completed successfully.")
-                    print_log("Waiting until tomorrow's 8:20 AM...")
-
-            else:
-                # It's a weekend
+            raw_open, raw_close = data_acquisition._nyse_session(current_date.strftime("%Y-%m-%d"))
+            session_open, session_close = normalize_session_times(raw_open, raw_close)
+            if not session_open or not session_close:
                 if last_weekend_message_date != current_date:
-                    print_log(f"[INFO] Today is {current_time.strftime('%A')}. Market is closed. Waiting for Monday...")
-                    last_weekend_message_date = current_date  # Update the last weekend message date
+                    print_log(f"[INFO] No NYSE session on {current_time.strftime('%Y-%m-%d (%A)')}. Waiting for the next trading day...")
+                    last_weekend_message_date = current_date
+                await asyncio.sleep(10)
+                continue
+
+            # Set target time to 10 minutes before market open
+            target_time = session_open - timedelta(minutes=10)
+
+            # Check if it's time to run and hasn't already run today
+            if current_time >= target_time and last_run_date != current_date:
+                print_log(f"[INFO] Running initial_setup and main_loop at {current_time.strftime('%Y-%m-%d %H:%M:%S')} (session {session_open.strftime('%H:%M')} - {session_close.strftime('%H:%M')})")
+
+                # 10 min before open: enforce clean EMA state for the day
+                migrate_ema_state_schema()                            # drop legacy keys like 'seen_ts'
+                hard_reset_ema_state(read_config('TIMEFRAMES'))       # clear per-TF candle_list + has_calculated
+                
+                # Pre-open setup
+                await ensure_economic_calendar_data()
+                refresh_chart("15M", chart_type="zones")
+
+                # Run the initial setup
+                await initial_setup()
+                
+                # Run the main loop if markets are open
+                if await is_market_open():
+                    await main_loop(session_open, session_close) 
+                else:
+                    print_log(f"Markets are closed today: {current_time.strftime('%m/%d/%Y - %A')}") # "Markets are closed today: 1/1/2025 - Wednesday"
+                    await print_discord("**MARKETS ARE CLOSED TODAY**")
+                    
+                last_run_date = current_date  # Update the last run date
+
+                print_log("[INFO] initial_setup and main_loop completed successfully.")
+                print_log("Waiting until the next session's pre-open window...")
 
             # Sleep for 10 seconds before checking again
             await asyncio.sleep(10)
@@ -250,15 +267,20 @@ async def main():
             print_log(f"[ERROR] Exception in main loop: {e}")
             await asyncio.sleep(10)  # Avoid tight loops in case of errors
 
-async def main_loop():
+async def main_loop(session_open, session_close):
     global websocket_connection
 
-    new_york = pytz.timezone('America/New_York')
     queue = asyncio.Queue()
 
-    current_time = datetime.now(new_york)
-    market_open_time = new_york.localize(datetime.combine(current_time.date(), datetime.strptime("09:30:00", "%H:%M:%S").time()))
-    market_close_time = new_york.localize(datetime.combine(current_time.date(), datetime.strptime("16:00:00", "%H:%M:%S").time()))
+    session_open, session_close = normalize_session_times(session_open, session_close)
+
+    current_time = datetime.now(new_york_tz)
+    market_open_time = session_open
+    market_close_time = session_close
+
+    if not market_open_time or not market_close_time:
+        print_log("[INFO] No NYSE session for today. Skipping main_loop.")
+        return
 
     # 🔒 If already past close, do nothing (avoid spamming EOD on dev restarts)
     if current_time >= market_close_time:
@@ -267,7 +289,7 @@ async def main_loop():
 
     # ⏳ WAIT until market open FIRST
     if current_time < market_open_time:
-        await wait_until_market_open(market_open_time, new_york)
+        await wait_until_market_open(market_open_time, new_york_tz)
 
     # ✅ INIT after waiting
     initialize_csv_order_log()
@@ -276,9 +298,9 @@ async def main_loop():
     did_run_intraday = False
 
     # BEGIN main loop (strictly before close)
-    while datetime.now(new_york) <= market_close_time: # note: '<' not '<='
+    while datetime.now(new_york_tz) <= market_close_time: # note: '<' not '<='
         try:
-            current_time = datetime.now(new_york)
+            current_time = datetime.now(new_york_tz)
 
             if websocket_connection is None:
                 data_acquisition.should_close = False
@@ -292,7 +314,7 @@ async def main_loop():
                 await print_discord(setup_economic_news_message())
 
             did_run_intraday = True
-            task1 = asyncio.create_task(process_data(queue), name="ProcessDataTask")
+            task1 = asyncio.create_task(process_data(queue, market_open_time, market_close_time), name="ProcessDataTask")
             #task2 = asyncio.create_task(execute_trading_strategy(), name="TradingStrategyTask") # We will uncomment this later, once storage and everything that the strategy needs to be setup, is setup.
             await asyncio.gather(task1)#, task2)
 
@@ -363,8 +385,7 @@ async def process_end_of_day():
     reset_profit_loss_orders_list()
 
     # 6. Storage compaction (safe to call daily; no-op if nothing to do)
-    ny = pytz.timezone('America/New_York')
-    day = datetime.now(ny).strftime("%Y-%m-%d")
+    day = datetime.now(new_york_tz).strftime("%Y-%m-%d")
     end_of_day_compaction(day, TFs=["2m","5m","15m"])
     process_end_of_day_15m_candles_for_objects()
 

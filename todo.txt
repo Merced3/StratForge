@@ -10,7 +10,13 @@ NEXT THING TO WORK ON:
 [x] Make a script that audits ALL of 15m parquet day files. make sure it checks if there half days/full days or whatever, also that there are no gaps and it can repiar the bad data.
 [x] change main functionality so that candles record correct timestamps, NY Session time, not relative.
 [x] make main.py compliant with dynamic open and close times.
-
+[x] Clean up `main.py`, alot of places can be more centralized, avoid repeated calls, remove duplicated time checks and task churn, miscounts tasks, avoid unnecessary wake-ups, and reduce repitition in state resets.
+    [x] Session utilities: Add helpers like `get_session_bounds(date)` (wraps `_nyse_session` + normalize) and `build_candle_schedule(open, close, timeframes, durations, buffer)` to centralize the timestamp/buffer generation and reuse for day-change recalcs.
+    [x] Config hydration: Read `SYMBOL`, `TIMEFRAMES`, `CANDLE_BUFFER`, etc. once at startup and pass them into functions; avoid repeated `read_config(...)` calls in tight loops.
+    [x] Process loop structure: In `main_loop(session_open, session_close)`, start `process_data(...)` once and await it; drop the outer `while datetime.now(...) <= market_close_time` guard (let `process_data` stop at close). This removes duplicated time checks and task creation churn.
+    [x] Queue handling: Move `queue.task_done()` inside the message-processing block so each consumed message is accounted for; right now it runs only once after the loop, which can miscount tasks if you ever `join()` the queue.
+    [x] Wait logic: Replace the busy loop in `wait_until_market_open` with a single `asyncio.sleep` to the computed delta (clamped at zero) to avoid unnecessary wake-ups.
+    [x] State resets: Extract a `reset_day_state()` that resets `current_candles`, `candle_counts`, and `start_times` in one place (initial setup + day rollover) to reduce repetition.
 Key: `x` = done/working, `-` = pending/developing currently
 
 I can't test anything because most of my storage folder, I need to go home and tranfer a bunch of data Manually.

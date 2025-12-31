@@ -153,6 +153,20 @@ def generate_live_chart(timeframe: str):
     # Draw objects (zones/levels)
     draw_objects(fig, df_objects, df_candles, tf_min, variant="live")
 
+    # Build readable time ticks on integer axis
+    tickvals = []
+    ticktext = []
+    if len(df_candles) > 0:
+        max_ticks = 8
+        n = len(df_candles)
+        step = max(1, int(round(n / max_ticks))) if n > max_ticks else 1
+        idxs = list(range(0, n, step))
+        if idxs[-1] != n - 1:
+            idxs.append(n - 1)
+        tickvals = df_candles["_x_int"].iloc[idxs].tolist()
+        ticktext = df_candles["_ts_plot"].iloc[idxs].dt.strftime("%H:%M").tolist()
+        fig.update_xaxes(tickmode="array", tickvals=tickvals, ticktext=ticktext)
+
     # Layout: key on the right, focus y-range on candles only
     visible_min = float(df_candles["low"].min())
     visible_max = float(df_candles["high"].max())

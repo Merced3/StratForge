@@ -32,3 +32,33 @@ When on main machine:
 3) Delete storage/objects/current and storage/objects/timeline for a clean slate.
 4) Run `python objects.py` to rebuild all objects from the verified, cleaned data.
 
+main computer audit:
+```
+[AUDIT] missing_dayfiles=0
+[AUDIT] tf=15m: scanned=1408, candle_issues=559, gx_issues=0, chain_breaks=1, early_closes=12, errors=0
+[AUDIT] done. totals=[('15m', 1408, 559, 0, 1, 12, 0)]
+```
+
+Main computer repair:
+```
+[REPAIR] 154 files older than 1825 days:
+[REPAIR] Deleted `...`
+[REPAIR] Will rebuild from 2021-01-04 forward (1254 files), mode=candles-only; clean_active=True
+
+[REPAIR] Deleted storage\data\15m\2021-01-04.parquet
+[GCCD] Data received; Candles from '09:30:00' to '15:45:00'.
+[create_daily_15m_parquet] Pulled '26' rows for '2021-01-04'.
+    (Candle Data...)
+[normalize] changed → 2021-01-04.parquet
+[create_daily_15m_parquet] → WARN 26 rows → `2021-01-04.parquet`
+[REPAIR] Rebuilt 2021-01-04 rows=26
+
+...
+
+# re-ran audit after repair finished - just to check
+
+[AUDIT] missing_dayfiles=0
+[AUDIT] tf=15m: scanned=1254, candle_issues=0, gx_issues=0, chain_breaks=0, early_closes=10, errors=0
+[AUDIT] done. totals=[('15m', 1254, 0, 0, 0, 10, 0)]
+
+```

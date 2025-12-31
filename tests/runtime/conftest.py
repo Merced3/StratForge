@@ -1,10 +1,17 @@
 # tests\runtime\conftest.py
 import asyncio
+import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import List, Dict, Any
 
 import pytest
 import pytz
+
+# Ensure project root is on sys.path for CI runners that don't add it automatically
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 import main
 

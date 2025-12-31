@@ -78,6 +78,7 @@ def dummy_config(monkeypatch, ny_tz):
     # Stub out external effects
     monkeypatch.setattr(main, "write_to_log", lambda *args, **kwargs: None, raising=False)
     monkeypatch.setattr(main, "append_candle", lambda *args, **kwargs: None, raising=False)
+    monkeypatch.setattr(main, "initialize_csv_order_log", lambda *args, **kwargs: None, raising=False)
 
     async def _noop_async(*args, **kwargs):
         return None

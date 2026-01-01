@@ -8,6 +8,7 @@ from indicators.ema_manager import update_ema, hard_reset_ema_state, migrate_ema
 from shared_state import price_lock, print_log
 from storage.parquet_writer import append_candle
 from tools.compact_parquet import end_of_day_compaction
+from tools.audit_candles import audit_dayfile
 import shared_state
 from indicators.flag_manager import clear_all_states
 #from strategies.trading_strategy import execute_trading_strategy
@@ -18,12 +19,13 @@ from order_handler import get_profit_loss_orders_list, reset_profit_loss_orders_
 import data_acquisition
 import asyncio
 from datetime import datetime, timedelta
-from objects import process_end_of_day_15m_candles_for_objects
+from typing import Optional
+from objects import process_end_of_day_15m_candles_for_objects, pull_and_replace_15m
 import httpx
 import cred
 import json
 import pytz
-from paths import TERMINAL_LOG, CANDLE_LOGS, SPY_15M_ZONE_CHART_PATH, SPY_2M_CHART_PATH, SPY_5M_CHART_PATH, SPY_15M_CHART_PATH, get_ema_path
+from paths import TERMINAL_LOG, CANDLE_LOGS, SPY_15M_ZONE_CHART_PATH, SPY_2M_CHART_PATH, SPY_5M_CHART_PATH, SPY_15M_CHART_PATH, DATA_DIR, get_ema_path
 import subprocess
 
 async def bot_start():
@@ -31,6 +33,8 @@ async def bot_start():
     print_log("Discord bot started.")
 
 websocket_connection = None  # Initialize websocket_connection at the top level
+
+_auto_heal_task = None
 
 ONE_HOUR = 3600
 ONE_MINUTE = 60
@@ -297,6 +301,7 @@ async def main_loop(session_open, session_close):
     current_time = datetime.now(new_york_tz)
     market_open_time = session_open
     market_close_time = session_close
+    trading_day_str = market_close_time.astimezone(new_york_tz).strftime("%Y-%m-%d")
 
     if not market_open_time or not market_close_time:
         print_log("[INFO] No NYSE session for today. Skipping `main_loop()`.")
@@ -336,7 +341,7 @@ async def main_loop(session_open, session_close):
         websocket_connection = None
         await asyncio.sleep(10)
         if did_run_intraday:
-            await process_end_of_day()
+            await process_end_of_day(trading_day_str)
         else:
             print_log("[INFO] Session ended without intraday work; skipping EOD.")
 
@@ -351,8 +356,7 @@ async def wait_until_market_open(target_time, tz):
         await asyncio.sleep(min(remaining - 0.1, 1.0))
     print_log("Market open hit; starting...")
 
-
-async def process_end_of_day():
+async def process_end_of_day(trading_day_str: Optional[str] = None):
     # 1. Get balances and calculate P/L
     rma = read_config('REAL_MONEY_ACTIVATED')
     start_of_day_account_balance = await get_account_balance(rma) if rma else read_config('START_OF_DAY_BALANCE')
@@ -394,9 +398,44 @@ async def process_end_of_day():
     reset_profit_loss_orders_list()
 
     # 6. Storage compaction (safe to call daily; no-op if nothing to do)
-    day = datetime.now(new_york_tz).strftime("%Y-%m-%d")
+    day = trading_day_str or datetime.now(new_york_tz).strftime("%Y-%m-%d")
     end_of_day_compaction(day, TFs=["2m","5m","15m"])
     process_end_of_day_15m_candles_for_objects()
+    schedule_auto_heal(day) # Just incase of any data issues, websocket drops, missing candles, ect.
+
+def schedule_auto_heal(day_str: str, delay_minutes: int = 20):
+    """Fire-and-forget healer run for a given trading day after a delay."""
+    global _auto_heal_task
+    if _auto_heal_task and not _auto_heal_task.done():
+        _auto_heal_task.cancel()
+
+    async def _runner():
+        print_log(f"[AUTO-HEAL] Scheduled for {day_str} in {delay_minutes}m")
+        await asyncio.sleep(delay_minutes * 60)
+
+        day_path = DATA_DIR / "15m" / f"{day_str}.parquet"
+        audit = None
+        try:
+            if day_path.exists():
+                audit = audit_dayfile(day_path, tf_minutes=15, tz=new_york_tz)
+                if audit.get("missing_count") == 0 and audit.get("extras_count") == 0 and audit.get("gx_ok"):
+                    print_log(f"[AUTO-HEAL] Audit clean for {day_str}; skipping heal.")
+                    return
+                print_log(f"[AUTO-HEAL] Audit issues for {day_str}: missing={audit.get('missing_count')}, extras={audit.get('extras_count')}, gx_ok={audit.get('gx_ok')}")
+            else:
+                print_log(f"[AUTO-HEAL] No dayfile for {day_str}; treating as missing and healing.")
+        except Exception as e:
+            print_log(f"[AUTO-HEAL] Audit failed for {day_str}, proceeding to heal: {e}")
+            
+        try:    
+            print_log(f"[AUTO-HEAL] Starting heal for {day_str}")
+            await pull_and_replace_15m(day_override=day_str)
+            print_log(f"[AUTO-HEAL] Completed heal for {day_str}")
+        except Exception as e:
+            print_log(f"[AUTO-HEAL] failed for {day_str}: {e}")
+
+    _auto_heal_task = asyncio.create_task(_runner(), name=f"AUTO-HEAL-{day_str}")
+
 
 async def shutdown(loop):
     """Shutdown tasks and the Discord bot."""

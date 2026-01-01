@@ -18,6 +18,7 @@ NEXT THING TO WORK ON:
     [x] Wait logic: Replace the busy loop in `wait_until_market_open` with a single `asyncio.sleep` to the computed delta (clamped at zero) to avoid unnecessary wake-ups.
     [x] State resets: Extract a `reset_day_state()` that resets `current_candles`, `candle_counts`, and `start_times` in one place (initial setup + day rollover) to reduce repetition.
 [x] make unit tests proving the "new" - more efficent `main.py` should work. `runtime/`
+[x] When market closes, auto-check/heal, after 20 mins of market close (we could do 15 mins because of polygon market plan delay) run the audit/candle/objects repair function that reads the current day setup and repairs anything missing INCASE we had some trouble for today.
 
 Key: `x` = done/working, `-` = pending/developing currently
 

@@ -217,10 +217,6 @@ def main():
                     bad_candles.append(res["day"])
                     if args.verbose:
                         print_log(f"[AUDIT] {res['day']}: missing={res['missing_count']}, extras={res['extras_count']}")
-                        #if res["missing"]:
-                            #print_log(f"         missing sample: {res['missing'][:3]}")
-                        #if res["extras"]:
-                            #print_log(f"         extras sample: {res['extras'][:3]}")
                 if not res["gx_ok"]:
                     bad_gx.append(res["day"])
                     if args.verbose:

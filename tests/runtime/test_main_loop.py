@@ -24,7 +24,7 @@ async def test_main_loop_runs_process_once(dummy_config, monkeypatch):
     async def fake_ws(queue, provider, symbol):
         called["ws"] += 1
 
-    async def fake_eod():
+    async def fake_eod(*_args, **_kwargs):
         called["process_end_of_day"] += 1
 
     monkeypatch.setattr(main, "process_data", fake_process_data, raising=False)

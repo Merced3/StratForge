@@ -193,44 +193,6 @@ async def is_market_open():
         print_log(f"[ERROR] Exception in is_market_open: {e}")
         return False
 
-async def get_market_hours(date):
-    """Get the market open and close times for the given date using Polygon.io API."""
-    url = f"https://api.polygon.io/vX/reference/markets/hours"
-    params = {
-        "apiKey": cred.POLYGON_API_KEY,
-        "market": "stocks",  # Specify the market type
-        "date": date  # Date in YYYY-MM-DD format
-    }
-
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params) as response:
-                # Log the response MIME type and content for debugging
-                print_log(f"[DEBUG] Response MIME type: {response.content_type}")
-                raw_data = await response.text()
-                print_log(f"[DEBUG] Raw response content: {raw_data}")
-
-                if response.content_type == "application/json":
-                    data = await response.json()
-                    print_log(f"[DATA_AQUISITION] 'get_market_hours()' DATA: \n{data}\n")
-
-                    if "results" in data:
-                        open_time = data["results"].get("open")
-                        close_time = data["results"].get("close")
-
-                        if open_time and close_time:
-                            return {
-                                "open_time_et": open_time,
-                                "close_time_et": close_time
-                            }
-                        else:
-                            raise KeyError(f"Missing keys in API response: 'open' or 'close'")
-                else:
-                    raise ValueError(f"Unexpected response type: {response.content_type}")
-    except Exception as e:
-        print_log(f"[ERROR] Exception in get_market_hours: {e}")
-        return None
-
 async def get_account_balance(is_real_money, bp=None):
     if is_real_money:
         endpoint = f'{cred.TRADIER_BROKERAGE_BASE_URL}accounts/{cred.TRADIER_BROKERAGE_ACCOUNT_NUMBER}/balances'
@@ -450,7 +412,3 @@ async def get_certain_candle_data(api_key, symbol, interval, timescale, start_da
         print_log(f"{indent(indent_lvl)}[GCCD] An unexpected error occurred: {e}")
 
     return None
-
-#if __name__ == "__main__":
-    #session_open, session_close = _nyse_session("2025-12-30")
-    #print(f"Market open: {session_open}, Market close: {session_close}")

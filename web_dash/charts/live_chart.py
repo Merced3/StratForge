@@ -1,5 +1,6 @@
 # web_dash/charts/live_chart.py
 from __future__ import annotations
+import json
 import re
 import pandas as pd
 import plotly.graph_objs as go
@@ -10,7 +11,7 @@ from storage.viewport import load_viewport, get_timeframe_bounds
 from web_dash.charts.theme import apply_layout, GREEN, RED
 from web_dash.assets.object_styles import draw_objects
 
-from paths import get_ema_path
+from paths import get_ema_path, get_markers_path
 from utils.ema_utils import load_ema_json
 
 _BAR_MINUTES_RE = re.compile(r"(\d+)\s*[mM]")
@@ -31,6 +32,18 @@ def _pick_bars_limit(timeframe: str, default: int = 600) -> int:
     cfg = read_config("LIVE_BARS") or {}
     v = cfg.get(timeframe) or cfg.get(timeframe.upper()) or cfg.get(timeframe.lower())
     return _coerce_pos_int(v, default)
+
+def _load_markers(timeframe: str):
+    """Load per-timeframe markers JSON; return list or empty list on any issue."""
+    path = get_markers_path(timeframe.upper())
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except FileNotFoundError:
+        return []
+    except Exception:
+        return []
 
 def generate_live_chart(timeframe: str):
     tf = timeframe.lower()
@@ -152,6 +165,38 @@ def generate_live_chart(timeframe: str):
 
     # Draw objects (zones/levels)
     draw_objects(fig, df_objects, df_candles, tf_min, variant="live")
+
+    # Draw markers (per-timeframe JSON; x-axis is integer-based)
+    markers = _load_markers(timeframe)
+    if markers:
+        df_m = pd.DataFrame(markers)
+        if not df_m.empty and "x" in df_m and "y" in df_m:
+            df_m = df_m.copy()
+            df_m["x"] = pd.to_numeric(df_m["x"], errors="coerce")
+            df_m["y"] = pd.to_numeric(df_m["y"], errors="coerce")
+            df_m = df_m.dropna(subset=["x", "y"]).sort_values("x")
+
+            symbol_map = {"^": "triangle-up", "v": "triangle-down", "o": "circle"}
+            legend_seen = set()
+            for _, row in df_m.iterrows():
+                style = row.get("style") or {}
+                marker_symbol = symbol_map.get(style.get("marker"), "circle")
+                marker_color = style.get("color", "#2563eb")
+                event = str(row.get("event_type", "marker")).upper()
+                showleg = event not in legend_seen
+                legend_seen.add(event)
+
+                hover = f"{event}<br>Candle: {int(row.get('x', 0))}<br>Price: %{{y:.2f}}"
+
+                fig.add_trace(go.Scatter(
+                    x=[row["x"]],
+                    y=[row["y"]],
+                    mode="markers",
+                    marker=dict(symbol=marker_symbol, size=10, color=marker_color, line=dict(width=1, color="#111")),
+                    name=event,
+                    hovertemplate=hover + "<extra></extra>",
+                    showlegend=showleg,
+                ))
 
     # Build readable time ticks on integer axis
     tickvals = []

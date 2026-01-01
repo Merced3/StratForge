@@ -144,8 +144,6 @@ def load_ema_json(path):
     try:
         data = safe_read_json(path, default=[])
         return data if isinstance(data, list) and data else None
-        #df = load_json_df(path)
-        #return df if not df.empty else None
     except:
         return None
     

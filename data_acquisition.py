@@ -16,7 +16,7 @@ from shared_state import price_lock, indent, print_log
 from utils.json_utils import read_config
 from utils.data_utils import get_dates
 from utils.file_utils import get_current_candle_index
-from paths import pretty_path, get_merged_ema_csv_path, MARKERS_PATH
+from paths import pretty_path, get_merged_ema_csv_path, get_markers_path
 
 RETRY_INTERVAL = 1  # Seconds between reconnection attempts
 should_close = False  # Global variable to signal if the WebSocket should close
@@ -243,13 +243,11 @@ async def get_current_price() -> float:
         print_log(f"[ERROR] Error fetching current price: {e}")
         return 0.0
 
-async def add_markers(event_type, x=None, y=None, percentage=None, tf="2M"):
+async def add_markers(event_type, x=None, y=None, percentage=None, live_tf="2M"):
     
-    x_coord = get_current_candle_index(tf) if x is None else x
+    x_coord = get_current_candle_index(live_tf) if x is None else x
     y_coord = y if y else await get_current_price()
-    print_log(f"    [MARKER] {x_coord}, {y_coord}, {event_type}")
-
-    x_coord += 1
+    print_log(f"    [MARKER-{live_tf}] {x_coord}, {y_coord}, {event_type}")
 
     marker_styles = {
         'buy': {'marker': '^', 'color': 'blue'},
@@ -268,23 +266,24 @@ async def add_markers(event_type, x=None, y=None, percentage=None, tf="2M"):
         'percentage': percentage
     }
 
-    # Ensure the file exists
-    if not MARKERS_PATH.exists():
-        with open(MARKERS_PATH, 'w') as f:
-            json.dump([], f)
+    marker_path = get_markers_path(live_tf)
+    marker_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Read existing markers
     try:
-        with open(MARKERS_PATH, 'r') as f:
+        if not marker_path.exists():
+            with open(marker_path, 'w') as f:
+                json.dump([], f)
+
+        with open(marker_path, 'r') as f:
             markers = json.load(f)
         # Ensure markers is a list
         if not isinstance(markers, list):
             markers = []
-    except json.decoder.JSONDecodeError:
+    except (json.decoder.JSONDecodeError, FileNotFoundError):
         markers = []
 
     markers.append(marker)
-    with open(MARKERS_PATH, 'w') as f:
+    with open(marker_path, 'w') as f:
         json.dump(markers, f, indent=4)
 
 async def get_candle_data_and_merge(candle_interval, candle_timescale, am_label, pm_label, indent_lvl, timeframe):

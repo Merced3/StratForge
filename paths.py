@@ -18,6 +18,7 @@ TERMINAL_LOG = LOGS_DIR / 'terminal_output.log'                         # This i
 # Storage
 STORAGE_DIR = BASE / 'storage'                                          # this holds any sensitive data, most of the stuff below is in this folder.
 DATA_DIR = STORAGE_DIR / 'data'                                         # This is needed, this is where all parquet files are stored.
+MARKERS_DIR = STORAGE_DIR / 'markers'                                   # Per-timeframe marker files for the frontend (e.g., 2M.json/5M.json)
 
 # Objects folder
 OBJECTS_DIR = STORAGE_DIR / 'objects'                                   # The `storage/objects/` folder contains zones and levels calculated by `objects.py`. We consider Zones and Levels as objects.
@@ -32,6 +33,9 @@ EMAS_DIR = STORAGE_DIR / 'emas'                                         # This i
 EMA_STATE_PATH = EMAS_DIR / "ema_state.json"                            # This is needed by `ema_manager.py`, this is for figuring out if were past the first 15 minutes of market open beacuse were on polygons cheap plan and they have 15 min delayed data, after the first 15 mins were back to the live-correct data.
 def get_ema_path(timeframe: str):                                       # This is needed by `ema_manager.py`, to get the path of the EMA file for every specific timeframe.
     return EMAS_DIR / f"{timeframe}.json"
+
+def get_markers_path(timeframe: str):                                   # Resolve per-timeframe marker JSON path (e.g., storage/markers/2M.json)
+    return MARKERS_DIR / f"{timeframe.upper()}.json"
 
 # JSONs                                                                 # Everything below this line is no longer needed, but later development will require the replacement of these in a working fashion, EMA's is a good example of what I had to replace `EMAs.json` with.
 LINE_DATA_PATH = STORAGE_DIR / 'line_data.json'                         # No longer needed, worked in older version, newer version require different timeframe flags hence the 'flags' folder which replaces this

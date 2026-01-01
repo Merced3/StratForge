@@ -1,8 +1,8 @@
 # utils/log_utils.py
 import json
 from shared_state import print_log
-from paths import pretty_path, LOGS_DIR, STORAGE_DIR, CSV_DIR, TERMINAL_LOG, ORDER_LOG_PATH, SPY_15_MINUTE_CANDLES_PATH
-from utils.json_utils import read_config, EOD_reset_all_jsons
+from paths import pretty_path, get_markers_path, LOGS_DIR, STORAGE_DIR, CSV_DIR, TERMINAL_LOG, ORDER_LOG_PATH, SPY_15_MINUTE_CANDLES_PATH
+from utils.json_utils import read_config, EOD_reset_all_jsons, reset_json
 import pandas as pd
 import os
 
@@ -83,10 +83,11 @@ def clear_temp_logs_and_order_files():
         except Exception as e:
             print_log(f"An error occurred while deleting `{pretty_path(file_path)}`: {e}")
 
-    # 4. Still clear symbol and terminal logs
+    # 4. Still clear symbol, terminal logs, markers, ect...
     tfs = ["2M", "5M", "15M"]
     for tf in tfs:
         clear_symbol_log(read_config('SYMBOL'), tf)
+        reset_json(get_markers_path(tf), [])
     clear_terminal_log()
 
 def read_last_n_lines(file_path, n):

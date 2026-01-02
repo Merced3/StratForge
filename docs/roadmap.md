@@ -4,25 +4,15 @@
 
 ## Now
 
-### NEW UI/UX
+### Documentation Alignment
 
-- **Goal**: Make the UI better than what we had previously.
-- **Status**: Completed
-- **Description**: Added multi-timeframe Dash tabs (2M/5M/15M + Zones), WS-triggered refreshes, Parquet/DuckDB-powered charts, and PNG exporter separation.
+- **Goal**: Make most recent changes align with documentation folder `docs/`.
+- **Status**: Pending
+- **Description**: Refer to `todo.txt` for more detials.
 
 ---
 
 ## Next
-
-### How To Look
-
-- **Goal**: Let the bot see what the market is interacting with.
-- **Status**: Not Started
-- **Description**: Log what candles are interacting with on each timeframe and build a consensus view; avoid overfitting while adding more “vision” signals.
-
----
-
-## Later
 
 ### Multi-Buy-In
 
@@ -30,17 +20,9 @@
 - **Status**: Not Started
 - **Description**: Implement multi-entry order handling; add sim/tests to validate behavior.
 
-### Adaptive Stop Loss
+---
 
-- **Goal**: Adaptive stop loss using EMAs, zones, and levels.
-- **Status**: Not Started
-- **Description**: Evaluate best stop anchors (13/48/200 EMA, zones, TPL_lines); experiment and test.
-
-### Candlestick Data Accuracy
-
-- **Goal**: Generate OCHL candlestick data from a 2nd reliable real-time price stream via a sequential setup.
-- **Status**: Blocked/Pending
-- **Description**: Polygon’s data is unsuitable; need a backup provider to rotate into when the primary fails.
+## Later
 
 ### Refactor Discord Message IDs
 

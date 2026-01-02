@@ -3,7 +3,7 @@ Documentation focused, making sure that docs are aligned with what is currently 
 
 NEXT THING TO WORK ON:
 [x] Update `docs/release-notes.md` to match reality: Tradier/Polygon failover is still active in `data_acquisition.py`; note the current provider setup or adjust code/docs for consistency.
-[ ] Refresh `docs/runbooks/rebuild-ema-state.md` to mirror `indicators/ema_manager.py`: JSON `ema_state`, premarket buffering, 09:45 ET finalize, merged pre/aftermarket CSVs, `USE_JSON_STATE`, and when to call `get_candle_data_and_merge`.
+[x] Refresh `docs/runbooks/rebuild-ema-state.md` to mirror `indicators/ema_manager.py`: JSON `ema_state`, premarket buffering, 09:45 ET finalize, merged pre/aftermarket CSVs, `USE_JSON_STATE`, and when to call `get_candle_data_and_merge`.
 [ ] Fix `docs/setup/project-structure.md` and `docs/TOC.md` to use the current `StratForge` name and `tests/…` layout (not `test/`); trim or add sections so the TOC reflects real files.
 [ ] Align `docs/testing/storage_tests.md` with actual tests under `tests/runtime` and `tests/storage_unit_tests` (e.g., `test_main_loop.py`, `test_process_data.py`, `test_wait_until_open.py`, `test_compaction.py`,`test_viewport.py`); remove or add entries for non-existent tests.
 [ ] Revisit `docs/roadmap.md`: update statuses/priorities (some items are stale) and clean wording.

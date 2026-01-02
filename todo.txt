@@ -10,7 +10,7 @@ NEXT THING TO WORK ON:
 [X] Add a short data-acquisition note (new doc or in `docs/api/ws_server.md`): how `ws_auto_connect` switches Tradier/Polygon, session ID fetch, ping timeouts, and the Polygon market-status check.
 [x] Add a brief data note on markers: `storage/markers/<TF>.json` written by `add_markers()` for frontend/PNGs—schema and usage.
 [x] Add a brief data note on emas: `storage/emas/<TF>.json` written by `update_ema()` for frontend/PNGs—schema and usage.
-[ ] Document `storage/week_performances.json`: schema fields, how/when it’s updated, and how to consume it.
+[-] Document `storage/week_performances.json`: schema fields, how/when it’s updated, and how to consume it.
 [ ] Optional: add stubs for the “coming soon” engine docs referenced in `overview.md` (`engine-overview`, `orders-and-tracking`) so links aren’t dangling.
 
 Key: `x` = done/working, `-` = pending/developing currently

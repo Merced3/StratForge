@@ -10,8 +10,10 @@ This folder holds automated tests for the bot. The aim is to catch regressions e
 
 ## Structure
 
+- **tests/conftest.py** — shared bootstrap: adds the repo root to `sys.path` for imports in CI and stubs the `cred` module so tests don’t require secrets.
+
 - **storage_unit_tests/**
-  - `conftest.py` — shared fixtures for storage tests (common paths, temp dirs, sample data).
+  - `conftest.py` — storage-specific fixtures (temp storage tree, patched paths, module reloads).
   - `test_compaction.py` — daily/monthly compaction: merges part files, preserves row counts/min/max ts/ts_iso, and removes redundant parts; checks 15m `global_x` continuity.
   - `test_csv_to_parquet_days.py` — converts 15m CSVs to daily Parquet; enforces contiguous `global_x`, correct schema, and defaulted volumes.
   - `test_objects_storage.py` — objects-specific storage: monthly rollups, integrity of object snapshots/events, and price-band inclusion/exclusion.
@@ -19,7 +21,7 @@ This folder holds automated tests for the bot. The aim is to catch regressions e
   - `test_viewport.py` — viewport/window loading: dedupes by (symbol, timeframe, ts), respects price/time filters, and handles optional `global_x`.
 
 - **runtime/**
-  - `conftest.py` — dummy config, stubs for external calls (WS, Discord, EMA), counting queue, shared async fixtures.
+  - `conftest.py` — runtime-specific fixtures (dummy config, stubs for external calls, counting queue, async fixtures).
   - `test_time_helpers.py` — session normalization and candle schedule generation for NYSE bounds.
   - `test_wait_until_open.py` — waits until session open without busy looping; future vs past target handling.
   - `test_process_data.py` — short-session candle processing: trade ingestion, timestamped flushes, task_done accounting, EMA/log writes.

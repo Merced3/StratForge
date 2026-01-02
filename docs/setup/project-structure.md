@@ -1,7 +1,8 @@
 # Project Structure (reference)
 
 ```bash
-StratForg|--├── .git/
+StratForge/
+├── .git/
 ├── .github/
 │   └── workflows/
 │       └── python-ci.yml
@@ -24,14 +25,19 @@ StratForg|--├── .git/
 │   │   ├── storage-viewport.md
 │   │   └── ws_server.md
 │   ├── architecture/
+│   │   ├── engine-overview.md
 │   │   ├── frontend-overview.md
+│   │   ├── orders-and-tracking.md
 │   │   └── overview.md
 │   ├── configuration/
 │   │   └── ticker-and-timeframes.md
 │   ├── data/
 │   │   ├── candles_schema.md
+│   │   ├── emas.md
+│   │   ├── markers.md
 │   │   ├── objects_schema.md
-│   │   └── storage-system.md
+│   │   ├── storage-system.md
+│   │   └── week_performances.md
 │   ├── frontend/
 │   │   └── web_dash.md
 │   ├── overview/
@@ -102,6 +108,7 @@ StratForg|--├── .git/
 │   ├── __pycache__/
 │   └── trading_strategy.py
 ├── tests/
+│   ├── __pycache__/
 │   ├── order_handling/
 │   │   └── frontend_markers/
 │   │       ├── __pycache__/
@@ -122,6 +129,7 @@ StratForg|--├── .git/
 │   │   ├── test_objects_storage.py
 │   │   ├── test_parquet_writer.py
 │   │   └── test_viewport.py
+│   ├── conftest.py
 │   └── purpose.md
 ├── tools/
 │   ├── __pycache__/

@@ -4,7 +4,7 @@ Now I want to focus on getting the WS reliably/simply working before the Central
 NEXT THING TO WORK ON:
 [x] Get WS and main seperate from deciding provider
 [X] get the unit test proving WS is working.
-[ ] make sure every other unit test is working.
+[x] make sure every other unit test is working.
 
 Key: `x` = done/working, `-` = pending/developing currently
 

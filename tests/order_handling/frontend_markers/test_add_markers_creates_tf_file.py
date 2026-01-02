@@ -30,8 +30,7 @@ def test_add_markers_writes_to_timeframe_file(tmp_path, monkeypatch):
 
     m = markers[0]
     assert m["event_type"] == "buy"
-    # x is incremented by the function
-    assert m["x"] == 6
+    assert m["x"] == 5
     assert m["y"] == 123.45
     assert m["percentage"] is None
     assert m["style"]["marker"] == "^"

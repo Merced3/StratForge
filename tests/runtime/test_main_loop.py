@@ -21,7 +21,7 @@ async def test_main_loop_runs_process_once(dummy_config, monkeypatch):
         called["process_data"] += 1
         return
 
-    async def fake_ws(queue, provider, symbol):
+    async def fake_ws(queue, symbol):
         called["ws"] += 1
 
     async def fake_eod(*_args, **_kwargs):

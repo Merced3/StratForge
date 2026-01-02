@@ -114,7 +114,6 @@ async def ws_auto_connect(queue, symbol):
             await asyncio.sleep(RETRY_INTERVAL)
             continue
 
-
 def get_session_id(retry_attempts=3, backoff_factor=1):
     """Retrieve a session ID from Tradier API."""
     url = "https://api.tradier.com/v1/markets/events/session"

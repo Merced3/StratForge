@@ -1,8 +1,7 @@
 # Project Structure (reference)
 
 ```bash
-StratForge/
-├── .git/
+StratForg|--├── .git/
 ├── .github/
 │   └── workflows/
 │       └── python-ci.yml
@@ -113,7 +112,8 @@ StratForge/
 │   │   ├── test_main_loop.py
 │   │   ├── test_process_data.py
 │   │   ├── test_time_helpers.py
-│   │   └── test_wait_until_open.py
+│   │   ├── test_wait_until_open.py
+│   │   └── test_ws_auto_connect.py
 │   ├── storage_unit_tests/
 │   │   ├── __pycache__/
 │   │   ├── conftest.py

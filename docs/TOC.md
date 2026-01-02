@@ -2,43 +2,6 @@
 
 If it explains how/why the system works (not just what it does), it belongs in `docs/`. If it’s user-facing marketing or setup basics, that’s `README.md`.
 
-```bash
-Flag-Zone-Bot/
-├─ docs/
-│  ├─ adr/
-│  │  ├─ 0001-separate-frontend-from-backend.md
-│  │  └─ 0002-parquet-append-and-duckdb-reads.md
-│  ├─ api/
-│  │  ├─ storage-viewport.md
-│  │  └─ ws_server.md
-│  ├─ architecture/
-│  │  ├─ frontend-overview.md
-│  │  └─ overview.md
-│  ├─ configuration/
-│  │  └─ ticker-and-timeframes.md
-│  ├─ data/
-│  │  ├─ candles_schema.md
-│  │  ├─ objects_schema.md
-│  │  └─ storage-system.md
-│  ├─ frontend/
-│  │  └─ web_dash.md
-│  ├─ overview/
-│  │  └─ stratforge.md
-│  ├─ runbooks/
-│  │  ├─ dashboard-stack.md
-│  │  ├─ end-of-day-compaction.md
-│  │  └─ rebuild-ema-state.md
-│  ├─ setup/
-│  │  └─ project-structure.md
-│  ├─ strategies/
-│  │  └─ README.md
-│  ├─ testing/
-│  │  └─ storage_tests.md
-│  ├─ roadmap.md
-│  ├─ release-notes.md
-│  └─ TOC.md   # This
-```
-
 ---
 
 ## Table of Contents

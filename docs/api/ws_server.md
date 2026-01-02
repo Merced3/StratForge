@@ -81,3 +81,13 @@ curl -X POST http://127.0.0.1:8000/refresh-chart \
 - Timeframe casing: use upper-case (`2M`, `5M`, `15M`, `zones`) to match config and Dash tabs.
 - If Dash is not running, broadcasts are harmless no-ops; reconnecting later will still receive the seed messages.
 - Run WS server and Dash separately so restarting the UI does not impact the trading loop.
+
+---
+
+## Data acquisition WS client (`ws_auto_connect` notes)
+
+- Providers are defined in `data_acquisition.PROVIDERS` with `enabled` flags; currently only Tradier is enabled. Polygon is kept as a placeholder/backup for future real-time access.
+- Tradier requires a session ID; `get_session_id()` is called before connecting and retries if missing.
+- Connection settings: `ping_interval=20s`, `ping_timeout=30s`, retry interval = 1s on failure.
+- On failure, the client rotates through the enabled provider list; with a single provider it simply retries that one.
+- Market-open checks use Polygon’s `v1/marketstatus/now` API in `is_market_open()`; this is independent of live WS ingestion.

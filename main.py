@@ -320,7 +320,7 @@ async def main_loop(session_open, session_close):
     try:
         if websocket_connection is None:
             data_acquisition.should_close = False
-            asyncio.create_task(ws_auto_connect(queue, active_provider, SYMBOL), name="WebsocketConnection")
+            asyncio.create_task(ws_auto_connect(queue, [active_provider], SYMBOL), name="WebsocketConnection")
             websocket_connection = True
 
             start_of_day_account_balance = await get_account_balance(read_config('REAL_MONEY_ACTIVATED')) if read_config('REAL_MONEY_ACTIVATED') else read_config('START_OF_DAY_BALANCE')

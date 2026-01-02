@@ -1,5 +1,5 @@
 # main.py
-from data_acquisition import ws_auto_connect, get_account_balance, active_provider, is_market_open
+from data_acquisition import ws_auto_connect, get_account_balance, is_market_open
 from utils.json_utils import read_config, get_correct_message_ids, update_config_value
 from utils.log_utils import write_to_log, clear_temp_logs_and_order_files
 from utils.order_utils import initialize_csv_order_log
@@ -320,7 +320,7 @@ async def main_loop(session_open, session_close):
     try:
         if websocket_connection is None:
             data_acquisition.should_close = False
-            asyncio.create_task(ws_auto_connect(queue, [active_provider], SYMBOL), name="WebsocketConnection")
+            asyncio.create_task(ws_auto_connect(queue, SYMBOL), name="WebsocketConnection")
             websocket_connection = True
 
             start_of_day_account_balance = await get_account_balance(read_config('REAL_MONEY_ACTIVATED')) if read_config('REAL_MONEY_ACTIVATED') else read_config('START_OF_DAY_BALANCE')

@@ -20,7 +20,7 @@ from paths import pretty_path, get_merged_ema_csv_path, get_markers_path
 
 RETRY_INTERVAL = 1  # Seconds between reconnection attempts
 should_close = False  # Global variable to signal if the WebSocket should close
-active_provider = "tradier" # global variable to track active provider
+active_provider = None  # Currently active data provider
 
 PROVIDERS = {
     "tradier": {
@@ -47,29 +47,25 @@ PROVIDERS = {
     },
 }
 
-async def ws_auto_connect(queue, providers, symbol):
+def get_enabled_providers():
+    enabled = [name for name, cfg in PROVIDERS.items() if cfg.get("enabled", True)]
+    if not enabled:
+        raise ValueError("No enabled providers configured")
+    return enabled
+
+async def ws_auto_connect(queue, symbol):
     """
     providers: list like ["tradier", "polygon"] or ["tradier"].
     Cycles through providers on failure; keeps retrying even with a single entry.
     """
     global should_close, active_provider
-    if not providers:
-        raise ValueError("No providers configured")
-
-    enabled_providers = [
-        p for p in providers
-        if PROVIDERS.get(p, {}).get("enabled", True)
-    ]
-    if not enabled_providers:
-        raise ValueError(f"No enabled providers in list: {providers}")
-
-    should_close = False
+    providers = get_enabled_providers()
     idx = 0
 
     while True:
-        provider = enabled_providers[idx % len(enabled_providers)]
+        provider = providers[idx % len(providers)]
         active_provider = provider
-        cfg = PROVIDERS.get(provider)
+        cfg = PROVIDERS[provider]
         if not cfg:
             print_log(f"[WARN] Unknown provider '{provider}', skipping.")
             idx += 1

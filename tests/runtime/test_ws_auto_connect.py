@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import suppress
 from types import SimpleNamespace
 
 import data_acquisition as da
@@ -26,17 +27,17 @@ def test_single_provider_retries(monkeypatch):
 
     monkeypatch.setattr(da, "websockets", SimpleNamespace(connect=fake_connect))
     monkeypatch.setattr(da, "get_session_id", lambda: "sid")
-    monkeypatch.setitem(da.PROVIDERS["tradier"], "enabled", True)
+    monkeypatch.setattr(da, "get_enabled_providers", lambda: ["tradier"])
     da.should_close = False
     da.RETRY_INTERVAL = 0
 
     async def run():
         q = asyncio.Queue()
-        task = asyncio.create_task(da.ws_auto_connect(q, ["tradier"], "SPY"))
-        await asyncio.sleep(0.05)
-        da.should_close = True
-        await asyncio.sleep(0.01)
+        task = asyncio.create_task(da.ws_auto_connect(q, "SPY"))
+        await asyncio.sleep(0.02)
         task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
 
     asyncio.run(run())
 
@@ -51,18 +52,17 @@ def test_rotation_on_failure(monkeypatch):
 
     monkeypatch.setattr(da, "websockets", SimpleNamespace(connect=fake_connect))
     monkeypatch.setattr(da, "get_session_id", lambda: "sid")
-    monkeypatch.setitem(da.PROVIDERS["tradier"], "enabled", True)
-    monkeypatch.setitem(da.PROVIDERS["polygon"], "enabled", True)
+    monkeypatch.setattr(da, "get_enabled_providers", lambda: ["tradier", "polygon"])
     da.should_close = False
     da.RETRY_INTERVAL = 0
 
     async def run():
         q = asyncio.Queue()
-        task = asyncio.create_task(da.ws_auto_connect(q, ["tradier", "polygon"], "SPY"))
-        await asyncio.sleep(0.05)
-        da.should_close = True
-        await asyncio.sleep(0.01)
+        task = asyncio.create_task(da.ws_auto_connect(q, "SPY"))
+        await asyncio.sleep(0.02)
         task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
 
     asyncio.run(run())
 

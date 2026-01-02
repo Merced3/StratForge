@@ -1,10 +1,12 @@
 Everything I'm focusing is:
-Now I want to focus on getting the WS reliably/simply working before the Central hub of option contract pricing so that multiple trades and be monitored and handled at once.
+Now I want to focus on the Central hub of option contract pricing so that multiple trades and be monitored and handled at once.
 
 NEXT THING TO WORK ON:
-[x] Get WS and main seperate from deciding provider
-[X] get the unit test proving WS is working.
-[x] make sure every other unit test is working.
+[ ] 
+[ ] 
+[ ] 
+[ ] 
+[ ] 
 
 Key: `x` = done/working, `-` = pending/developing currently
 

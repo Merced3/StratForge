@@ -22,132 +22,102 @@ RETRY_INTERVAL = 1  # Seconds between reconnection attempts
 should_close = False  # Global variable to signal if the WebSocket should close
 active_provider = "tradier" # global variable to track active provider
 
-def _nyse_session(day_str: str):
-    cal = mcal.get_calendar("NYSE")
-    sched = cal.schedule(start_date=day_str, end_date=day_str)
-    if sched.empty:
-        return None, None
-    row = sched.iloc[0]
-    # keep tz-aware NY times
-    return (
-        row["market_open"].tz_convert("America/New_York"),
-        row["market_close"].tz_convert("America/New_York"),
-    )
-
-async def ws_auto_connect(queue, provider, symbol):
-    """
-    Sequential WebSocket connection logic for multiple providers. 
-    (Currently supports Tradier and Polygon, for now.)
-    """
-    global should_close
-    global active_provider
-    print_log(f"Starting ws_connect() for {provider}...")
-
-    # Define the WebSocket URL based on the provider
-    url = {
-        "tradier": "wss://ws.tradier.com/v1/markets/events",
-        "polygon": "wss://delayed.polygon.io/stocks"  # Updated to match your plan
-    }.get(provider)
-
-    # Define headers only for Tradier; Polygon does not need extra headers
-    headers = {
-        "tradier": {
+PROVIDERS = {
+    "tradier": {
+        "enabled": True,
+        "url": "wss://ws.tradier.com/v1/markets/events",
+        "headers": lambda: {
             "Authorization": f"Bearer {cred.TRADIER_BROKERAGE_ACCOUNT_ACCESS_TOKEN}",
-            "Accept": "application/json"
-        }
-    }.get(provider)
+            "Accept": "application/json",
+        },
+        "build_payloads": lambda symbol, session_id: {
+            "auth": None,
+            "sub": json.dumps({"symbols": [symbol], "sessionid": session_id, "linebreak": True}),
+        },
+    },
+    "polygon": {
+        # Plan/real-time WS not active; keep as placeholder for future backup.
+        "enabled": False,
+        "url": "wss://delayed.polygon.io/stocks",
+        "headers": lambda: None,
+        "build_payloads": lambda symbol, _: {
+            "auth": json.dumps({"action": "auth", "params": cred.POLYGON_API_KEY}),
+            "sub": json.dumps({"action": "subscribe", "params": f"AM.{symbol}"}),
+        },
+    },
+}
 
-    # Ensure the configuration is valid
-    if not url:
-        raise ValueError(f"[{provider.upper()}] Invalid provider configuration. Check URL.")
+async def ws_auto_connect(queue, providers, symbol):
+    """
+    providers: list like ["tradier", "polygon"] or ["tradier"].
+    Cycles through providers on failure; keeps retrying even with a single entry.
+    """
+    global should_close, active_provider
+    if not providers:
+        raise ValueError("No providers configured")
+
+    enabled_providers = [
+        p for p in providers
+        if PROVIDERS.get(p, {}).get("enabled", True)
+    ]
+    if not enabled_providers:
+        raise ValueError(f"No enabled providers in list: {providers}")
 
     should_close = False
-    retry_count = 0
+    idx = 0
 
     while True:
+        provider = enabled_providers[idx % len(enabled_providers)]
+        active_provider = provider
+        cfg = PROVIDERS.get(provider)
+        if not cfg:
+            print_log(f"[WARN] Unknown provider '{provider}', skipping.")
+            idx += 1
+            continue
+
+        url = cfg["url"]
+        headers = cfg["headers"]() if cfg.get("headers") else None
+
+        # Provider-specific session/payload prep
+        session_id = get_session_id() if provider == "tradier" else None
+        if provider == "tradier" and not session_id:
+            print_log("[TRADIER] Unable to get session ID. Retrying same provider...")
+            await asyncio.sleep(RETRY_INTERVAL)
+            continue
+
+        payloads = cfg["build_payloads"](symbol, session_id)
+        auth_msg = payloads.get("auth")
+        sub_msg = payloads.get("sub")
+
         try:
-            # Ensure session_id is valid
-            session_id = get_session_id() if provider == "tradier" else None
-            if provider == "tradier" and not session_id:
-                print_log("[TRADIER] Unable to get session ID. Retrying...")
-                await asyncio.sleep(RETRY_INTERVAL)
-                retry_count += 1
-                continue  # Retry the loop
-
-            # after a successful connection loop begins, reset `retry_count`
-            retry_count = 0
-            
-            # Define payloads for authentication and subscription
-            payloads = {
-                "tradier": json.dumps({
-                    "symbols": [symbol],
-                    "sessionid": session_id, # if tradier else none
-                    "linebreak": True
-                }),
-                "polygon_auth": json.dumps({
-                    "action": "auth",
-                    "params": cred.POLYGON_API_KEY
-                }),
-                "polygon_subscribe": json.dumps({
-                    "action": "subscribe",
-                    "params": f"AM.{symbol}"
-                })
-            }
-
-            # Validate Tradier payload
-            if provider == "tradier" and not payloads.get("tradier"):
-                print_log("[TRADIER] Payload construction failed. Retrying...")
-                await asyncio.sleep(RETRY_INTERVAL)
-                continue  # Retry the loop
-
-            # Validate Polygon payloads
-            if provider == "polygon" and (not payloads.get("polygon_auth") or not payloads.get("polygon_subscribe")):
-                print_log("[POLYGON] Payload construction failed. Retrying...")
-                await asyncio.sleep(RETRY_INTERVAL)
-                continue  # Retry the loop
-
             async with websockets.connect(
-                url, 
-                ssl=True, 
-                compression=None, 
+                url,
+                ssl=True,
+                compression=None,
                 extra_headers=headers,
-                ping_interval=20,   # seconds (None to disable)
-                ping_timeout=30     # seconds before considering dead
+                ping_interval=20,
+                ping_timeout=30,
             ) as websocket:
-                # The new `ping_interval` and `ping_timeout` are giving the socket more leeway so transient stalls don’t kill it instantly
-                
-                if provider == "polygon":
-                    await websocket.send(payloads["polygon_auth"])
-                    # Wait for an auth response (usually a status / success message)
+                if auth_msg:
+                    await websocket.send(auth_msg)
                     try:
-                        auth_reply = await asyncio.wait_for(websocket.recv(), timeout=3)
-                        print_log(f"[POLYGON] Auth reply: {auth_reply}")
+                        await asyncio.wait_for(websocket.recv(), timeout=3)
                     except asyncio.TimeoutError:
-                        print_log("[POLYGON] No auth ack within 3s; continuing cautiously.")
-                    await websocket.send(payloads["polygon_subscribe"])
-                    print_log(f"[{provider.upper()}] Sent subscribe payload: {payloads['polygon_subscribe']}, {datetime.now().isoformat()}")
-
-                elif provider == "tradier":
-                    await websocket.send(payloads["tradier"])
-                    print_log(f"[{provider.upper()}] Sent payload: {payloads['tradier']}, {datetime.now().isoformat()}")
-
-                print_log(f"[{provider.upper()}] WebSocket connection established.")
-                print_log("[Hr:Mn:Sc]")
-
+                        print_log(f"[{provider.upper()}] No auth ack within 3s; continuing.")
+                if sub_msg:
+                    await websocket.send(sub_msg)
+                print_log(f"[{provider.upper()}] WebSocket established.")
                 async for message in websocket:
                     if should_close:
-                        print_log(f"[{provider.upper()}] Closing WebSocket connection.")
                         await websocket.close()
                         return
                     await queue.put(message)
-
         except Exception as e:
-            print_log(f"[{provider.upper()}] WebSocket failed: {e}")
-            # Switch providers locally
-            provider = "polygon" if provider == "tradier" else "tradier"
-            active_provider = provider
-            print_log(f"[INFO] Switching to {active_provider.capitalize()} WebSocket...")
+            print_log(f"[{provider.upper()}] WebSocket failed: {e}; rotating provider.")
+            idx += 1
             await asyncio.sleep(RETRY_INTERVAL)
+            continue
+
 
 def get_session_id(retry_attempts=3, backoff_factor=1):
     """Retrieve a session ID from Tradier API."""
@@ -172,6 +142,18 @@ def get_session_id(retry_attempts=3, backoff_factor=1):
 
     print_log("[TRADIER] Failed to get session ID after retries.")
     return None
+
+def _nyse_session(day_str: str):
+    cal = mcal.get_calendar("NYSE")
+    sched = cal.schedule(start_date=day_str, end_date=day_str)
+    if sched.empty:
+        return None, None
+    row = sched.iloc[0]
+    # keep tz-aware NY times
+    return (
+        row["market_open"].tz_convert("America/New_York"),
+        row["market_close"].tz_convert("America/New_York"),
+    )
 
 async def is_market_open():
     """Check if the stock market is open today using Polygon.io API."""

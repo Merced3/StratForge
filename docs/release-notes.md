@@ -46,7 +46,7 @@
 
 - **Goal**: Improve reliability and error handling in WebSocket connections.
 - **Status**: Completed
-- **Description**: Fixed `ws_connect_v2` for Tradier and Polygon, debugged switching logic. Identified and removed Polygon as a provider.
+- **Description**: Fixed `ws_connect_v2` for Tradier and Polygon, debugged switching logic. Current WS provider: Tradier. Polygon remains a placeholder/backup; it’s not active today because our plan doesn’t include real-time WS. The connection loop supports multiple providers, but the configured list currently only includes Tradier. *Backup provider: placeholder for future real-time source (Polygon or another) when available.*
 
 ---
 

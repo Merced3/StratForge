@@ -1,66 +1,17 @@
-Currently working on everything display-wise
-
-Everything the new storage system works, just need to get the display/frontend to read whats in the storage via the new stored procedures functionality. The unit tests will show everything storage working.
+Everything I'm focusing is:
+Documentation focused, making sure that docs are aligned with what is currently going on before moving on to the next task which is the central hub of option contract pricing so that multiple trades and be monitored and handled at once.
 
 NEXT THING TO WORK ON:
-[x] frontend works enough, the objects display.
-[x] Get the historical chart PNG file to show what we see on web_dash.
-[x] Get the EMA's to work with the live chart
-[x] Auto heal doesn't work correctly, it gets the correct 15m data but it doesn't check if market was closed early and just returns from hard coded conventional market open times and closed times (8:30am to 3pm san antonio time)
-[x] Make a script that audits ALL of 15m parquet day files. make sure it checks if there half days/full days or whatever, also that there are no gaps and it can repiar the bad data.
-[x] change main functionality so that candles record correct timestamps, NY Session time, not relative.
-[x] make main.py compliant with dynamic open and close times.
-[x] Clean up `main.py`, alot of places can be more centralized, avoid repeated calls, remove duplicated time checks and task churn, miscounts tasks, avoid unnecessary wake-ups, and reduce repitition in state resets.
-    [x] Session utilities: Add helpers like `get_session_bounds(date)` (wraps `_nyse_session` + normalize) and `build_candle_schedule(open, close, timeframes, durations, buffer)` to centralize the timestamp/buffer generation and reuse for day-change recalcs.
-    [x] Config hydration: Read `SYMBOL`, `TIMEFRAMES`, `CANDLE_BUFFER`, etc. once at startup and pass them into functions; avoid repeated `read_config(...)` calls in tight loops.
-    [x] Process loop structure: In `main_loop(session_open, session_close)`, start `process_data(...)` once and await it; drop the outer `while datetime.now(...) <= market_close_time` guard (let `process_data` stop at close). This removes duplicated time checks and task creation churn.
-    [x] Queue handling: Move `queue.task_done()` inside the message-processing block so each consumed message is accounted for; right now it runs only once after the loop, which can miscount tasks if you ever `join()` the queue.
-    [x] Wait logic: Replace the busy loop in `wait_until_market_open` with a single `asyncio.sleep` to the computed delta (clamped at zero) to avoid unnecessary wake-ups.
-    [x] State resets: Extract a `reset_day_state()` that resets `current_candles`, `candle_counts`, and `start_times` in one place (initial setup + day rollover) to reduce repetition.
-[x] make unit tests proving the "new" - more efficent `main.py` should work. `runtime/`
-[x] When market closes, auto-check/heal, after 20 mins of market close (we could do 15 mins because of polygon market plan delay) run the audit/candle/objects repair function that reads the current day setup and repairs anything missing INCASE we had some trouble for today.
-[x] Make markers work with frontend. (buy/sell/trim - and what timeframe), Extra: make unit test
+[x] Update `docs/release-notes.md` to match reality: Tradier/Polygon failover is still active in `data_acquisition.py`; note the current provider setup or adjust code/docs for consistency.
+[ ] Refresh `docs/runbooks/rebuild-ema-state.md` to mirror `indicators/ema_manager.py`: JSON `ema_state`, premarket buffering, 09:45 ET finalize, merged pre/aftermarket CSVs, `USE_JSON_STATE`, and when to call `get_candle_data_and_merge`.
+[ ] Fix `docs/setup/project-structure.md` and `docs/TOC.md` to use the current `StratForge` name and `tests/…` layout (not `test/`); trim or add sections so the TOC reflects real files.
+[ ] Align `docs/testing/storage_tests.md` with actual tests under `tests/runtime` and `tests/storage_unit_tests` (e.g., `test_main_loop.py`, `test_process_data.py`, `test_wait_until_open.py`, `test_compaction.py`,`test_viewport.py`); remove or add entries for non-existent tests.
+[ ] Revisit `docs/roadmap.md`: update statuses/priorities (some items are stale) and clean wording.
+[ ] Add a short data-acquisition note (new doc or in `docs/api/ws_server.md`): how `ws_auto_connect` switches Tradier/Polygon, session ID fetch, ping timeouts, and the Polygon market-status check.
+[ ] Add a brief data note on markers: `storage/markers/<TF>.json` written by `add_markers()` for frontend/PNGs—schema and usage.
+[ ] Document `storage/week_performances.json`: schema fields, how/when it’s updated, and how to consume it.
+[ ] Optional: add stubs for the “coming soon” engine docs referenced in `overview.md` (`engine-overview`, `orders-and-tracking`) so links aren’t dangling.
 
 Key: `x` = done/working, `-` = pending/developing currently
 
-I can't test anything because most of my storage folder, I need to go home and tranfer a bunch of data Manually.
-fill in cred.py as it was deleted and not tracked.
-fill in storage folder alot of folders werent tracked.
-
-When on main machine:
-1) Run `python tools/audit_candles.py --timeframes 15m --verbose` to audit all candles (missing days, gaps/extras, early closes).
-2) Run `python tools/repair_candles.py --timeframe 15m --max-age-days 1825` to repair what the audit found (flip clean_files_active=True when ready).
-    optional: you could re-run the audit, just to double check.
-3) Delete storage/objects/current and storage/objects/timeline for a clean slate.
-4) Run `python objects.py` to rebuild all objects from the verified, cleaned data.
-
-main computer audit:
-```
-[AUDIT] missing_dayfiles=0
-[AUDIT] tf=15m: scanned=1408, candle_issues=559, gx_issues=0, chain_breaks=1, early_closes=12, errors=0
-[AUDIT] done. totals=[('15m', 1408, 559, 0, 1, 12, 0)]
-```
-
-Main computer repair:
-```
-[REPAIR] 154 files older than 1825 days:
-[REPAIR] Deleted `...`
-[REPAIR] Will rebuild from 2021-01-04 forward (1254 files), mode=candles-only; clean_active=True
-
-[REPAIR] Deleted storage\data\15m\2021-01-04.parquet
-[GCCD] Data received; Candles from '09:30:00' to '15:45:00'.
-[create_daily_15m_parquet] Pulled '26' rows for '2021-01-04'.
-    (Candle Data...)
-[normalize] changed → 2021-01-04.parquet
-[create_daily_15m_parquet] → WARN 26 rows → `2021-01-04.parquet`
-[REPAIR] Rebuilt 2021-01-04 rows=26
-
-...
-
-# re-ran audit after repair finished - just to check
-
-[AUDIT] missing_dayfiles=0
-[AUDIT] tf=15m: scanned=1254, candle_issues=0, gx_issues=0, chain_breaks=0, early_closes=10, errors=0
-[AUDIT] done. totals=[('15m', 1254, 0, 0, 0, 10, 0)]
-
-```
+Notes:

@@ -24,7 +24,7 @@ How It Works:
 
 Examples:
 ---------
-# Print your main project tree (best for Echo_Protocol)
+# Print your main project tree
 python tools/generate_structure.py .
 
 # Print everything in parent folder (not recommended—prints all projects!)
@@ -47,7 +47,7 @@ def generate_project_structure(root_dir, exclude_dirs=None):
         str: A string representing the formatted directory structure.
     """
     if exclude_dirs is None:
-        exclude_dirs = ["venv", "__pycache__", ".git"]
+        exclude_dirs = ["venv", "__pycache__", ".git", "2m", "5m", "15m", "timeline"]
 
     def walk_dir(directory, prefix=""):
         structure = ""

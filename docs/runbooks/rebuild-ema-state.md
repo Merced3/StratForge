@@ -11,3 +11,4 @@
 ### Notes
 
 - Useful after schema migrations or clearing corrupted EMA files.
+- The point of the rebuild is because of my current polygon subcription plan as I cannot get ema data live because that is expensive so I have to build it using the $30/m plan which has the 15 minute delay to whenever it gives me the data. The data is complete and accurate after the first 15 minutes of market open.

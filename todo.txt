@@ -1,13 +1,19 @@
 Everything I'm focusing is:
-Now I want to focus on the Central hub of option contract pricing so that multiple trades and be monitored and handled at once.
+Decoupling, I want to make this current system as simple, modular, easy to change, as possible.
+So that if i do want to make changes and update those changes, as its running - to other system's the other systems don't fail.
 
 NEXT THING TO WORK ON:
-[ ] 
-[ ] 
-[ ] 
-[ ] 
-[ ] 
-
+[ ] Docs:
+    [ ] `docs/adr/0003-decouple-data-pipeline-from-orchestrator.md`
+    [ ] `docs/architecture/engine-overview.md` runtime services + restartability matrix
+    [ ] `docs/runbooks/data-pipeline.md`
+    [ ] `docs/runbooks/release-guardrails.md`
+[ ] Implementation:
+    [ ] Phase 1: extract `process_data` to `data_pipeline.py` with injected sinks
+    [ ] Phase 2: data_acquisition.start_feed/stop_feed
+    [ ] Phase 3: slim main.py orchestrator
+    [ ] Phase 4 (optional): decouple indicator/strategy workers and add replay path
+    
 Key: `x` = done/working, `-` = pending/developing currently
 
 Notes:

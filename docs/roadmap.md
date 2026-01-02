@@ -4,11 +4,11 @@
 
 ## Now
 
-### Documentation Alignment
+### Decoupling the data pipeline
 
-- **Goal**: Make most recent changes align with documentation folder `docs/`.
+- **Goal**: Making the system as "Easy To Change" as possible. Modular, Decoupled.
 - **Status**: Pending
-- **Description**: Refer to `todo.txt` for more detials.
+- **Description**: The point is to be able to seperate everything so that if one part fails the other parts don't shut down. So that it's easy to change, and update live without disturbing anything in the process.
 
 ---
 

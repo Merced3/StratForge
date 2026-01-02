@@ -16,8 +16,8 @@
 
 ## Engine (future)
 
-- Strategy loop, signals, state machines: *(coming soon)* `docs/architecture/engine-overview.md`
-- Orders & tracking (brokers, fills, P&L): *(coming soon)* `docs/architecture/orders-and-tracking.md`
+- Strategy loop, signals, state machines: *(planned; stub exists)* `docs/architecture/engine-overview.md`
+- Orders & tracking (brokers, fills, P&L): *(planned; stub exists)* `docs/architecture/orders-and-tracking.md`
 
 ## Configuration
 

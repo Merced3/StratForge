@@ -1,9 +1,30 @@
 {
-    "week_timespan": "12-29-25 to 01-04-26",
+    "week_timespan": "01-05-26 to 01-11-26",
     "dates": {
-        "12-30-25": {
-            "01:00 PM": [
-                "FOMC Minutes"
+        "01-05-26": {
+            "09:00 AM": [
+                "ISM Manufacturing PMI"
+            ]
+        },
+        "01-07-26": {
+            "09:00 AM": [
+                "Ivey PMI s.a",
+                "ISM Services PMI",
+                "JOLTs Job Openings"
+            ]
+        },
+        "01-09-26": {
+            "07:30 AM": [
+                "Unemployment Rate",
+                "Building Permits Prel",
+                "Building Permits Prel",
+                "Housing Starts",
+                "Housing Starts",
+                "Non Farm Payrolls",
+                "Unemployment Rate"
+            ],
+            "09:00 AM": [
+                "Michigan Consumer Sentiment Prel"
             ]
         }
     }

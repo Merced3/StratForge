@@ -1088,7 +1088,7 @@
         "num_of_trades": 0,
         "num_of_profitable_trades": 0,
         "num_of_negitive_trades": 0,
-        "description": "Day 1, data collection was good, I am letting this program run for one more day to see if the new continous script is working correctly, on the unit tests they did.",
+        "description": "Day 1, data collection was good, I am letting this program run for one more day to see if the new continous script is working correctly, on the unit tests they did. Day 2, data collection was good, no issues, auto healing working as always, havent worked on the unit tests yet of teh new WS decoupling version but will get there when im at barnes and nobles today.",
         "important_message_ids": []
     }
 ]

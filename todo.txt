@@ -3,22 +3,9 @@ Decoupling, I want to make this current system as simple, modular, easy to chang
 So that if i do want to make changes and update those changes, as its running - to other system's the other systems don't fail.
 
 NEXT THING TO WORK ON:
-[x] Docs:
-    [x] `docs/adr/0003-decouple-data-pipeline-from-orchestrator.md`
-    [x] `docs/architecture/engine-overview.md` runtime services + restartability matrix
-    [x] `docs/runbooks/data-pipeline.md`
-    [x] `docs/runbooks/release-guardrails.md`
-[ ] Implementation:
-    [x] Phase 1: extract `process_data` to `data_pipeline.py` with injected sinks
-    [x] Phase 2: data_acquisition.start_feed/stop_feed
-    [x] Phase 3: slim `main.py` orchestrator
-    [ ] Phase 4 (optional): decouple indicator/strategy workers and add replay path
-    
+[ ] Extract `refresh_chart`:
+    [ ] Extract it into a small “ui” helper and inject it into the pipeline (already halfway done with sinks).
+[ ] Replace remaining globals with injected config or handles (e.g., feed/provider status).
+[ ] Consolidate repeated session logic into `session.py` (already underway).
+
 Key: `x` = done/working, `-` = pending/developing currently
-
-Notes:
-
-Think of the backend process like this:
-- Feed (`data_acquisition`): owns provider rotation, session auth, raw websocket connection, and pushes raw messages onto a queue. That belongs in `data_acquisition` because it’s about “getting data,” not transforming it.
-- Pipeline (`pipeline/`): consumes the queue of messages and turns ticks into candles, then fans out to storage/indicators/charts. It shouldn’t know about websockets or providers.
-- Orchestrator (`main.py`): wires the two together, handles session timing, reporting, and shutdown.

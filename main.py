@@ -15,7 +15,6 @@ from shared_state import print_log
 import asyncio
 from datetime import datetime, timedelta
 from typing import Optional
-from contextlib import suppress
 from objects import process_end_of_day_15m_candles_for_objects, pull_and_replace_15m
 import httpx
 import cred

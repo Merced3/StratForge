@@ -8,6 +8,12 @@
 - Indicators/strategy: consume candles/events to produce signals.
 - Reporting: Discord notifications, charts, EOD summary.
 
+## Responsibilities (runtime roles)
+
+- Feed (`data_acquisition`): owns provider rotation, session auth, raw websocket connection, and pushes raw messages onto a queue. This is “getting data,” not transforming it.
+- Pipeline (`pipeline/`): consumes the queue and turns ticks into candles, then fans out to storage/indicators/charts. It shouldn’t know about websockets or providers.
+- Orchestrator (`main.py`): wires the two together, handles session timing, reporting, and shutdown.
+
 ## Restartability matrix
 
 - Orchestrator: restart outside market hours; during hours only if feed/pipeline can be resumed.

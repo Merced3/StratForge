@@ -20,8 +20,9 @@ async def test_main_loop_runs_process_once(dummy_config, monkeypatch):
     async def fake_run_pipeline(*_args, **_kwargs):
         called["run_pipeline"] += 1
 
-    async def fake_ws(queue, symbol):
+    async def fake_ws(queue, symbol, stop_event):
         called["ws"] += 1
+        await asyncio.sleep(0)
 
     async def fake_eod(*_args, **_kwargs):
         called["process_end_of_day"] += 1

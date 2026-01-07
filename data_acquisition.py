@@ -20,7 +20,6 @@ from paths import pretty_path, get_merged_ema_csv_path, get_markers_path
 from session import _nyse_session
 
 RETRY_INTERVAL = 1  # Seconds between reconnection attempts
-should_close = False  # Global variable to signal if the WebSocket should close
 active_provider = None  # Currently active data provider
 
 PROVIDERS = {
@@ -54,16 +53,16 @@ def get_enabled_providers():
         raise ValueError("No enabled providers configured")
     return enabled
 
-async def ws_auto_connect(queue, symbol):
+async def ws_auto_connect(queue, symbol, stop_event: asyncio.Event):
     """
     providers: list like ["tradier", "polygon"] or ["tradier"].
     Cycles through providers on failure; keeps retrying even with a single entry.
     """
-    global should_close, active_provider
+    global active_provider
     providers = get_enabled_providers()
     idx = 0
 
-    while True:
+    while not stop_event.is_set():
         provider = providers[idx % len(providers)]
         active_provider = provider
         cfg = PROVIDERS[provider]
@@ -105,7 +104,7 @@ async def ws_auto_connect(queue, symbol):
                     await websocket.send(sub_msg)
                 print_log(f"[{provider.upper()}] WebSocket established.")
                 async for message in websocket:
-                    if should_close:
+                    if stop_event.is_set():
                         await websocket.close()
                         return
                     await queue.put(message)

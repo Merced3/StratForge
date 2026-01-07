@@ -2,7 +2,8 @@
 
 ## Status
 
-Proposed
+Accepted
+**Note**: Feed start/stop wrappers planned; websocket uses injected stop events today.
 
 ## Context
 

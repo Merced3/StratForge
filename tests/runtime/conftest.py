@@ -52,7 +52,7 @@ def dummy_config(monkeypatch, ny_tz):
     monkeypatch.setattr(main, "send_file_discord", _noop_async, raising=False)
     monkeypatch.setattr(main, "print_discord", _noop_async, raising=False)
     monkeypatch.setattr(main, "print_log", lambda *args, **kwargs: None, raising=False)
-    monkeypatch.setattr(main, "ws_auto_connect", _noop_async, raising=False)  # overridden per test as needed
+    monkeypatch.setattr(main, "ws_auto_connect", lambda *args, **kwargs: _noop_async(), raising=False)  # overridden per test as needed
     monkeypatch.setattr(main, "process_end_of_day", _noop_async, raising=False)
     monkeypatch.setattr(main, "is_market_open", lambda *args, **kwargs: True, raising=False)
     monkeypatch.setattr(main, "ensure_economic_calendar_data", _noop_async, raising=False)

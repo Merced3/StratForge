@@ -11,11 +11,11 @@ from economic_calender_scraper import ensure_economic_calendar_data, setup_econo
 from print_discord_messages import bot, print_discord, send_file_discord, calculate_day_performance
 from error_handler import error_log_and_discord_message
 from order_handler import get_profit_loss_orders_list, reset_profit_loss_orders_list
-import data_acquisition
 from shared_state import print_log
 import asyncio
 from datetime import datetime, timedelta
 from typing import Optional
+from contextlib import suppress
 from objects import process_end_of_day_15m_candles_for_objects, pull_and_replace_15m
 import httpx
 import cred
@@ -141,10 +141,11 @@ async def main_loop(session_open, session_close):
     initialize_csv_order_log()
 
     did_run_intraday = False
+    stop_event = asyncio.Event()
+    ws_task = None
     try:
         if websocket_connection is None:
-            data_acquisition.should_close = False
-            asyncio.create_task(ws_auto_connect(queue, SYMBOL), name="WebsocketConnection")
+            ws_task = asyncio.create_task(ws_auto_connect(queue, SYMBOL, stop_event), name="WebsocketConnection")
             websocket_connection = True
 
             start_of_day_account_balance = await get_account_balance(read_config('REAL_MONEY_ACTIVATED')) if read_config('REAL_MONEY_ACTIVATED') else read_config('START_OF_DAY_BALANCE')
@@ -166,7 +167,11 @@ async def main_loop(session_open, session_close):
         await error_log_and_discord_message(e, "main", "main_loop")
 
     finally:
-        data_acquisition.should_close = True
+        if ws_task:
+            stop_event.set()
+            ws_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await ws_task
         websocket_connection = None
         await asyncio.sleep(10)
         if did_run_intraday:

@@ -43,8 +43,6 @@ async def test_main_loop_runs_process_once(dummy_config, monkeypatch):
     monkeypatch.setattr(main, "stop_feed", fake_stop_feed, raising=False)
     monkeypatch.setattr(main, "process_end_of_day", fake_eod, raising=False)
     monkeypatch.setattr(main, "wait_until_market_open", lambda *args, **kwargs: asyncio.sleep(0), raising=False)
-    main.websocket_connection = None
-
     await main.main_loop(session_open, session_close)
 
     assert called["run_pipeline"] == 1
@@ -63,7 +61,5 @@ async def test_main_loop_skips_if_already_closed(dummy_config, monkeypatch):
         called["run_pipeline"] += 1
 
     monkeypatch.setattr(main, "run_pipeline", fake_run_pipeline, raising=False)
-    main.websocket_connection = None
-
     await main.main_loop(session_open, session_close)
     assert called["run_pipeline"] == 0

@@ -19,7 +19,6 @@ from contextlib import suppress
 from dataclasses import dataclass
 
 RETRY_INTERVAL = 1  # Seconds between reconnection attempts
-_active_provider = None  # Currently active data provider
 
 @dataclass
 class FeedHandle:
@@ -73,13 +72,11 @@ async def ws_auto_connect(queue, symbol, stop_event: asyncio.Event):
     providers: list like ["tradier", "polygon"] or ["tradier"].
     Cycles through providers on failure; keeps retrying even with a single entry.
     """
-    global _active_provider
     providers = get_enabled_providers()
     idx = 0
 
     while not stop_event.is_set():
         provider = providers[idx % len(providers)]
-        _active_provider = provider
         cfg = PROVIDERS[provider]
         if not cfg:
             print_log(f"[WARN] Unknown provider '{provider}', skipping.")

@@ -34,12 +34,7 @@ async def bot_start():
     await bot.start(cred.DISCORD_TOKEN)
     print_log("Discord bot started.")
 
-websocket_connection = None  # Initialize websocket_connection at the top level
-
 _auto_heal_task = None
-
-TIMEFRAMES = read_config('TIMEFRAMES')
-SYMBOL = read_config('SYMBOL')
 
 # Define New York timezone
 new_york_tz = pytz.timezone('America/New_York')
@@ -55,6 +50,7 @@ async def main():
 
     while True:
         try:
+            pipeline_cfg = load_pipeline_config()
             # Get the current time in New York timezone
             current_time = datetime.now(new_york_tz)
             current_date = current_time.date()  # Extract the date (e.g., 2024-06-12)
@@ -76,7 +72,7 @@ async def main():
 
                 # 10 min before open: enforce clean EMA state for the day
                 migrate_ema_state_schema()             # drop legacy keys like 'seen_ts'
-                hard_reset_ema_state(TIMEFRAMES)       # clear per-TF candle_list + has_calculated
+                hard_reset_ema_state(pipeline_cfg["timeframes"])       # clear per-TF candle_list + has_calculated
                 
                 # Pre-open setup
                 await ensure_economic_calendar_data()
@@ -105,8 +101,6 @@ async def main():
             await asyncio.sleep(10)  # Avoid tight loops in case of errors
 
 async def main_loop(session_open, session_close):
-    global websocket_connection
-
     queue = asyncio.Queue()
     session_open, session_close = normalize_session_times(session_open, session_close)
 
@@ -114,6 +108,7 @@ async def main_loop(session_open, session_close):
     market_open_time = session_open
     market_close_time = session_close
     trading_day_str = market_close_time.astimezone(new_york_tz).strftime("%Y-%m-%d")
+    config = PipelineConfig(**load_pipeline_config())
 
     if not market_open_time or not market_close_time:
         print_log("[INFO] No NYSE session for today. Skipping `main_loop()`.")
@@ -131,19 +126,16 @@ async def main_loop(session_open, session_close):
     did_run_intraday = False
     feed_handle = None
     try:
-        if websocket_connection is None:
-            feed_handle = await start_feed(SYMBOL, queue)
-            websocket_connection = True
+        feed_handle = await start_feed(config.symbol, queue)
 
-            start_of_day_account_balance = await get_account_balance(read_config('REAL_MONEY_ACTIVATED')) if read_config('REAL_MONEY_ACTIVATED') else read_config('START_OF_DAY_BALANCE')
-            f_s_account_balance = "{:,.2f}".format(start_of_day_account_balance)
-            await print_discord(f"Market is Open! Account BP: ${f_s_account_balance}")
-            await send_file_discord(SPY_15M_ZONE_CHART_PATH)
-            await print_discord(setup_economic_news_message())
+        start_of_day_account_balance = await get_account_balance(read_config('REAL_MONEY_ACTIVATED')) if read_config('REAL_MONEY_ACTIVATED') else read_config('START_OF_DAY_BALANCE')
+        f_s_account_balance = "{:,.2f}".format(start_of_day_account_balance)
+        await print_discord(f"Market is Open! Account BP: ${f_s_account_balance}")
+        await send_file_discord(SPY_15M_ZONE_CHART_PATH)
+        await print_discord(setup_economic_news_message())
 
         did_run_intraday = True
         
-        config = PipelineConfig(**load_pipeline_config())
         deps = PipelineDeps(get_session_bounds=get_session_bounds, latest_price_lock=price_lock, shared_state=shared_state)
         sinks = PipelineSinks(append_candle=append_candle, update_ema=update_ema, refresh_chart=refresh_chart, on_error=error_log_and_discord_message)
 
@@ -156,7 +148,6 @@ async def main_loop(session_open, session_close):
     finally:
         if feed_handle:
             await stop_feed(feed_handle)
-        websocket_connection = None
         await asyncio.sleep(10)
         if did_run_intraday:
             await process_end_of_day(trading_day_str)

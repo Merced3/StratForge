@@ -32,8 +32,6 @@ def ny_tz():
 def dummy_config(monkeypatch, ny_tz):
     """Patch main module globals/config to deterministic test values."""
     # Minimal config
-    monkeypatch.setattr(main, "TIMEFRAMES", ["1M"], raising=False)
-    monkeypatch.setattr(main, "SYMBOL", "TEST", raising=False)
     monkeypatch.setattr(main, "CANDLE_BUFFER", 0, raising=False)
     monkeypatch.setattr(main, "CANDLE_DURATION", {"1M": 1}, raising=False)  # 1-second candles for tests
 

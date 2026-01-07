@@ -17,6 +17,7 @@ from utils.json_utils import read_config
 from utils.data_utils import get_dates
 from utils.file_utils import get_current_candle_index
 from paths import pretty_path, get_merged_ema_csv_path, get_markers_path
+from session import _nyse_session
 
 RETRY_INTERVAL = 1  # Seconds between reconnection attempts
 should_close = False  # Global variable to signal if the WebSocket should close
@@ -137,38 +138,6 @@ def get_session_id(retry_attempts=3, backoff_factor=1):
 
     print_log("[TRADIER] Failed to get session ID after retries.")
     return None
-
-def _nyse_session(day_str: str):
-    cal = mcal.get_calendar("NYSE")
-    sched = cal.schedule(start_date=day_str, end_date=day_str)
-    if sched.empty:
-        return None, None
-    row = sched.iloc[0]
-    # keep tz-aware NY times
-    return (
-        row["market_open"].tz_convert("America/New_York"),
-        row["market_close"].tz_convert("America/New_York"),
-    )
-
-async def is_market_open():
-    """Check if the stock market is open today using Polygon.io API."""
-    url = "https://api.polygon.io/v1/marketstatus/now"
-    params = {"apiKey": cred.POLYGON_API_KEY}
-
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    print_log(f"\n[DATA_AQUISITION] 'is_market_open()' DATA: \n{data}\n")
-                    market_status = data.get("market", "closed")
-                    return market_status in ["open", "extended-hours"]
-                else:
-                    print_log(f"[ERROR] Polygon API request failed with status {response.status}: {await response.text()}")
-                    return False
-    except Exception as e:
-        print_log(f"[ERROR] Exception in is_market_open: {e}")
-        return False
 
 async def get_account_balance(is_real_money, bp=None):
     if is_real_money:

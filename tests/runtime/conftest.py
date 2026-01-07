@@ -1,11 +1,13 @@
 # tests\runtime\conftest.py
 import asyncio
 from datetime import datetime, timedelta
+from types import SimpleNamespace
 
 import pytest
 import pytz
 
 import main
+from runtime import pipeline_config_loader
 
 
 class CountingQueue(asyncio.Queue):
@@ -30,16 +32,11 @@ def dummy_config(monkeypatch, ny_tz):
     """Patch main module globals/config to deterministic test values."""
     # Minimal config
     monkeypatch.setattr(main, "TIMEFRAMES", ["1M"], raising=False)
-    monkeypatch.setattr(main, "CANDLE_BUFFER", 0, raising=False)
     monkeypatch.setattr(main, "SYMBOL", "TEST", raising=False)
+    monkeypatch.setattr(main, "CANDLE_BUFFER", 0, raising=False)
     monkeypatch.setattr(main, "CANDLE_DURATION", {"1M": 1}, raising=False)  # 1-second candles for tests
 
-    # Reset state each test
-    main.reset_day_state(now=datetime.now(ny_tz))
-
     # Stub out external effects
-    monkeypatch.setattr(main, "write_to_log", lambda *args, **kwargs: None, raising=False)
-    monkeypatch.setattr(main, "append_candle", lambda *args, **kwargs: None, raising=False)
     monkeypatch.setattr(main, "initialize_csv_order_log", lambda *args, **kwargs: None, raising=False)
 
     async def _noop_async(*args, **kwargs):
@@ -55,7 +52,7 @@ def dummy_config(monkeypatch, ny_tz):
     monkeypatch.setattr(main, "send_file_discord", _noop_async, raising=False)
     monkeypatch.setattr(main, "print_discord", _noop_async, raising=False)
     monkeypatch.setattr(main, "print_log", lambda *args, **kwargs: None, raising=False)
-    monkeypatch.setattr(main, "ws_auto_connect", _noop_async, raising=False)
+    monkeypatch.setattr(main, "ws_auto_connect", _noop_async, raising=False)  # overridden per test as needed
     monkeypatch.setattr(main, "process_end_of_day", _noop_async, raising=False)
     monkeypatch.setattr(main, "is_market_open", lambda *args, **kwargs: True, raising=False)
     monkeypatch.setattr(main, "ensure_economic_calendar_data", _noop_async, raising=False)
@@ -72,6 +69,12 @@ def dummy_config(monkeypatch, ny_tz):
         return mapping[key]
 
     monkeypatch.setattr(main, "read_config", _fake_read_config, raising=False)
+    monkeypatch.setattr(pipeline_config_loader, "read_config", _fake_read_config, raising=False)
+    monkeypatch.setattr(pipeline_config_loader, "pytz", SimpleNamespace(timezone=lambda _: ny_tz), raising=False)
+
+    # Ensure shared_state.latest_price is reset between tests
+    import shared_state
+    shared_state.latest_price = None
 
 
 @pytest.fixture

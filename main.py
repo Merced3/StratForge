@@ -16,7 +16,6 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Optional
 from objects import process_end_of_day_15m_candles_for_objects, pull_and_replace_15m
-import httpx
 import cred
 import pytz
 from paths import TERMINAL_LOG, SPY_15M_ZONE_CHART_PATH, SPY_2M_CHART_PATH, SPY_5M_CHART_PATH, SPY_15M_CHART_PATH, DATA_DIR, get_ema_path
@@ -29,6 +28,7 @@ from storage.parquet_writer import append_candle
 from indicators.ema_manager import update_ema
 from shared_state import price_lock
 import shared_state
+from web_dash.refresh_client import refresh_chart
 
 async def bot_start():
     await bot.start(cred.DISCORD_TOKEN)
@@ -43,17 +43,6 @@ SYMBOL = read_config('SYMBOL')
 
 # Define New York timezone
 new_york_tz = pytz.timezone('America/New_York')
-
-def refresh_chart(timeframe, chart_type="live"):
-    try:
-        # give Kaleido room on cold start
-        httpx.post("http://127.0.0.1:8000/refresh-chart",
-                   json={"timeframe": timeframe, "chart_type": chart_type},
-                   timeout=httpx.Timeout(connect=2.0, read=15.0, write=5.0, pool=5.0))
-    except httpx.ReadTimeout:
-        print_log(f"    [refresh_chart] timed out (render likely completed anyway)")
-    except Exception as e:
-        print_log(f"[refresh_chart] failed: {e}")
 
 async def initial_setup():
     await bot.wait_until_ready()
@@ -91,7 +80,7 @@ async def main():
                 
                 # Pre-open setup
                 await ensure_economic_calendar_data()
-                refresh_chart("15M", chart_type="zones")
+                await refresh_chart("15M", chart_type="zones")
 
                 # Run the initial setup
                 await initial_setup()

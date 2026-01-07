@@ -34,6 +34,10 @@ This is the Dash entry point. It reads `TIMEFRAMES/SYMBOL` from `config.json` (T
 
 `chart_updater.py` is only for static PNG exports (Discord/sharing) and optional WS notifications. It builds a clean `go.Figure`, writes to `storage/images/SPY_<TF>_chart.png` (or `SPY_<TF>-zone_chart.png` when `chart_type="zones"`), and if `notify=True`, POSTs to `/trigger-chart-update`. It sets `xaxis.type` to date for live charts and category for zones to avoid Plotly rangebreak quirks. The Dash app itself does not depend on this module.
 
+## Refresh Client (`refresh_client.py`)
+
+`refresh_client.py` is the backend helper used by the trading engine to trigger a live refresh. It calls `POST /refresh-chart` asynchronously, which both broadcasts a chart update and regenerates the PNG snapshot. This keeps the engine decoupled from the WS server implementation while still updating charts when candles close.
+
 ## WebSocket Server (`ws_server.py`)
 
 The FastAPI service broadcasts lightweight update cues:
@@ -69,6 +73,6 @@ Builds the 15M historical zones figure as a dcc.Graph:
 ## Real-Time Chart Update Flow
 
 1. **Candle/object writes**: backend appends Parquet parts (and updates snapshots) when a bar closes.
-2. **Optional export**: backend can call `update_chart(tf, chart_type, notify=True)` to refresh PNGs; notify=True also triggers step 3.
+2. **Optional export**: backend can call `await refresh_client.refresh_chart(tf, chart_type)` to refresh PNGs and broadcast updates, or use `update_chart(tf, chart_type, notify=True)` for offline export.
 3. **Broadcast**: backend or exporter hits POST `/trigger-chart-update` (or `/refresh-chart`), which sends `chart:<tf>` (and the WS server already seeded all TFs on connect so every tab rendered once).
 4. **Dash render**: the tab that matches `<tf>` regenerates its figure (live uses parts-only window anchored by config; zones uses `last-N-day` dayfiles) and the `dcc.Graph` updates in-browser without a page reload.

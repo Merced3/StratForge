@@ -20,5 +20,5 @@ class PipelineDeps:
 class PipelineSinks:
     append_candle: Callable[[str, str, dict], Any]
     update_ema: Callable[[dict, str], Awaitable[None]]
-    refresh_chart: Callable[[str, str], Any]
+    refresh_chart: Callable[[str, str], Awaitable[None]]
     on_error: Callable[[Exception, str, str], Awaitable[None]]

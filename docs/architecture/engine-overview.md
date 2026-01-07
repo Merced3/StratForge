@@ -3,6 +3,7 @@
 ## Runtime services
 
 - Orchestrator: session scheduling, feed/pipeline start-stop, EOD/reporting.
+- Orchestrator: uses `web_dash.refresh_client` to trigger chart refreshes when needed.
 - Feed: websocket/provider rotation, pushes trades to a queue/stream.
 - Pipeline: trade→candle aggregation, writes to storage, emits to indicators/charts.
 - Indicators/strategy: consume candles/events to produce signals.

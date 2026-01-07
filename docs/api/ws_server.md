@@ -43,6 +43,7 @@
   1) Broadcasts like `/trigger-chart-update` (so UI refreshes immediately).  
   2) Spawns a background task to run `update_chart(timeframe, chart_type)` to regenerate the PNG snapshot on disk.
 - Response: `{"status": "saved-and-broadcast", "timeframes": [...], "clients": <count>}`.
+- Typical caller: backend uses `web_dash.refresh_client.refresh_chart(...)` (async).
 
 ## Typical flow
 

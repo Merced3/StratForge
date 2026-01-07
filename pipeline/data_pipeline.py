@@ -83,7 +83,7 @@ async def run_pipeline(queue, config, deps, sinks, now_fn=None):
                             sinks.append_candle(config.symbol, timeframe, candle)
                             candle_counts[timeframe] += 1
                             await sinks.update_ema(candle, timeframe)
-                            sinks.refresh_chart(timeframe, chart_type="live")
+                            await sinks.refresh_chart(timeframe, chart_type="live")
                             current_candles[timeframe] = {"open": None, "high": None, "low": None, "close": None}
 
                             if f_now in timestamps[timeframe]:

@@ -47,7 +47,7 @@ def dummy_config(monkeypatch, ny_tz):
         return 1000.0
 
     monkeypatch.setattr(main, "update_ema", _noop_async, raising=False)
-    monkeypatch.setattr(main, "refresh_chart", lambda *args, **kwargs: None, raising=False)
+    monkeypatch.setattr(main, "refresh_chart", _noop_async, raising=False)
     monkeypatch.setattr(main, "get_account_balance", _return_1000, raising=False)
     monkeypatch.setattr(main, "setup_economic_news_message", lambda *args, **kwargs: "", raising=False)
     monkeypatch.setattr(main, "send_file_discord", _noop_async, raising=False)

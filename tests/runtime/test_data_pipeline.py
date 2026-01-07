@@ -39,10 +39,13 @@ async def test_pipeline_closes_candle(monkeypatch):
     append_rec = Recorder()
     update_rec = Recorder()
     refresh_rec = Recorder()
+    async def _noop_refresh(*_args, **_kwargs):
+        return None
+
     sinks = PipelineSinks(
         append_candle=append_rec,
         update_ema=lambda c, tf: asyncio.sleep(0),
-        refresh_chart=lambda tf, chart_type="live": None,
+        refresh_chart=_noop_refresh,
         on_error=lambda e, mod, fn: asyncio.sleep(0),
     )
 

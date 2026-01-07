@@ -45,7 +45,7 @@ class FakeWS:
         async def gen():
             for m in self._messages:
                 yield m
-            # keepalive messages so ws_auto_connect can hit should_close branch
+            # keepalive messages so ws_auto_connect can hit the stop_event check
             while not self._stop_event.is_set():
                 yield '{"type":"keepalive"}'
                 await asyncio.sleep(0)

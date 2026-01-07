@@ -1,5 +1,5 @@
 # main.py
-from data_acquisition import ws_auto_connect, get_account_balance
+from data_acquisition import get_account_balance, start_feed, stop_feed
 from utils.json_utils import read_config, get_correct_message_ids, update_config_value
 from utils.log_utils import clear_temp_logs_and_order_files
 from utils.order_utils import initialize_csv_order_log
@@ -141,11 +141,10 @@ async def main_loop(session_open, session_close):
     initialize_csv_order_log()
 
     did_run_intraday = False
-    stop_event = asyncio.Event()
-    ws_task = None
+    feed_handle = None
     try:
         if websocket_connection is None:
-            ws_task = asyncio.create_task(ws_auto_connect(queue, SYMBOL, stop_event), name="WebsocketConnection")
+            feed_handle = await start_feed(SYMBOL, queue)
             websocket_connection = True
 
             start_of_day_account_balance = await get_account_balance(read_config('REAL_MONEY_ACTIVATED')) if read_config('REAL_MONEY_ACTIVATED') else read_config('START_OF_DAY_BALANCE')
@@ -167,11 +166,8 @@ async def main_loop(session_open, session_close):
         await error_log_and_discord_message(e, "main", "main_loop")
 
     finally:
-        if ws_task:
-            stop_event.set()
-            ws_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await ws_task
+        if feed_handle:
+            await stop_feed(feed_handle)
         websocket_connection = None
         await asyncio.sleep(10)
         if did_run_intraday:

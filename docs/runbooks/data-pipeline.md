@@ -3,7 +3,7 @@
 ## Start sequence
 
 1) Orchestrator builds queue/stream.
-2) Start feed via `ws_auto_connect(queue, symbol, stop_event)`; set `stop_event` to stop (planned: `start_feed/stop_feed` wrapper).
+2) Start feed via `start_feed(symbol, queue)` (wraps `ws_auto_connect` + stop event); call `stop_feed(handle)` to stop.
 3) Start pipeline: `run_pipeline(queue, sinks...)` (async task).
 4) Verify health: feed connected, pipeline processing (logs), candles written.
 

@@ -3,7 +3,7 @@
 ## Status
 
 Accepted
-**Note**: Feed start/stop wrappers planned; websocket uses injected stop events today.
+**Note**: Feed start/stop wrappers implemented via `start_feed/stop_feed` wrapping `ws_auto_connect`.
 
 ## Context
 

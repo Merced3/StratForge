@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 
 import pytest
 import pytz
+from types import SimpleNamespace
+from contextlib import suppress
 
 import main
 
@@ -20,15 +22,25 @@ async def test_main_loop_runs_process_once(dummy_config, monkeypatch):
     async def fake_run_pipeline(*_args, **_kwargs):
         called["run_pipeline"] += 1
 
-    async def fake_ws(queue, symbol, stop_event):
+    async def fake_start_feed(symbol, queue):
         called["ws"] += 1
-        await asyncio.sleep(0)
+        # return a handle with a no-op task and event
+        stop_event = asyncio.Event()
+        task = asyncio.create_task(asyncio.sleep(0))
+        return SimpleNamespace(task=task, stop_event=stop_event)
+
+    async def fake_stop_feed(handle):
+        handle.stop_event.set()
+        handle.task.cancel()
+        with suppress(asyncio.CancelledError):
+            await handle.task
 
     async def fake_eod(*_args, **_kwargs):
         called["process_end_of_day"] += 1
 
     monkeypatch.setattr(main, "run_pipeline", fake_run_pipeline, raising=False)
-    monkeypatch.setattr(main, "ws_auto_connect", fake_ws, raising=False)
+    monkeypatch.setattr(main, "start_feed", fake_start_feed, raising=False)
+    monkeypatch.setattr(main, "stop_feed", fake_stop_feed, raising=False)
     monkeypatch.setattr(main, "process_end_of_day", fake_eod, raising=False)
     monkeypatch.setattr(main, "wait_until_market_open", lambda *args, **kwargs: asyncio.sleep(0), raising=False)
     main.websocket_connection = None

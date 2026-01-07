@@ -1,16 +1,13 @@
-#data_aquisition.py
+# data_acquisition.py
 import requests
 import pandas as pd
 import shared_state
 import websockets
 import asyncio
 import cred
-import aiohttp
 import json
-import pandas_market_calendars as mcal
 import pytz
 import time
-from datetime import datetime
 from error_handler import error_log_and_discord_message
 from shared_state import price_lock, indent, print_log
 from utils.json_utils import read_config
@@ -18,9 +15,27 @@ from utils.data_utils import get_dates
 from utils.file_utils import get_current_candle_index
 from paths import pretty_path, get_merged_ema_csv_path, get_markers_path
 from session import _nyse_session
+from contextlib import suppress
+from dataclasses import dataclass
 
 RETRY_INTERVAL = 1  # Seconds between reconnection attempts
-active_provider = None  # Currently active data provider
+_active_provider = None  # Currently active data provider
+
+@dataclass
+class FeedHandle:
+    task: asyncio.Task
+    stop_event: asyncio.Event
+
+async def start_feed(symbol, queue) -> FeedHandle:
+    stop_event = asyncio.Event()
+    task = asyncio.create_task(ws_auto_connect(queue, symbol, stop_event), name="WebsocketConnection")
+    return FeedHandle(task=task, stop_event=stop_event)
+
+async def stop_feed(handle: FeedHandle):
+    handle.stop_event.set()
+    handle.task.cancel()
+    with suppress(asyncio.CancelledError):
+        await handle.task
 
 PROVIDERS = {
     "tradier": {
@@ -58,13 +73,13 @@ async def ws_auto_connect(queue, symbol, stop_event: asyncio.Event):
     providers: list like ["tradier", "polygon"] or ["tradier"].
     Cycles through providers on failure; keeps retrying even with a single entry.
     """
-    global active_provider
+    global _active_provider
     providers = get_enabled_providers()
     idx = 0
 
     while not stop_event.is_set():
         provider = providers[idx % len(providers)]
-        active_provider = provider
+        _active_provider = provider
         cfg = PROVIDERS[provider]
         if not cfg:
             print_log(f"[WARN] Unknown provider '{provider}', skipping.")

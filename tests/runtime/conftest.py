@@ -5,10 +5,10 @@ from types import SimpleNamespace
 from contextlib import suppress
 
 import pytest
-import pytz
 
 import main
 from runtime import pipeline_config_loader
+from utils.timezone import NY_TZ
 
 
 class CountingQueue(asyncio.Queue):
@@ -25,7 +25,7 @@ class CountingQueue(asyncio.Queue):
 
 @pytest.fixture
 def ny_tz():
-    return pytz.timezone("America/New_York")
+    return NY_TZ
 
 
 @pytest.fixture
@@ -79,7 +79,6 @@ def dummy_config(monkeypatch, ny_tz):
 
     monkeypatch.setattr(main, "read_config", _fake_read_config, raising=False)
     monkeypatch.setattr(pipeline_config_loader, "read_config", _fake_read_config, raising=False)
-    monkeypatch.setattr(pipeline_config_loader, "pytz", SimpleNamespace(timezone=lambda _: ny_tz), raising=False)
 
     # Ensure shared_state.latest_price is reset between tests
     import shared_state

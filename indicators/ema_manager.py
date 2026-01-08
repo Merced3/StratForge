@@ -12,14 +12,13 @@ from paths import (
 from utils.file_utils import get_current_candle_index
 from utils.ema_utils import calculate_save_EMAs
 from datetime import datetime, timedelta, time
-import pytz
+from utils.timezone import NY_TZ
 import os
 
 # -----------------------------
 # Configuration
 # -----------------------------
 USE_JSON_STATE = True  # True = JSON-backed state; False = in-memory ephemeral
-NY_TZ = pytz.timezone("America/New_York")
 MARKET_OPEN = time(9, 30)
 
 # -----------------------------

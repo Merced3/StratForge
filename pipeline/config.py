@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Callable, Awaitable, Any
-import pytz
+from utils.timezone import NY_TZ
 
 @dataclass
 class PipelineConfig:
@@ -8,7 +8,7 @@ class PipelineConfig:
     durations: dict
     buffer_secs: int
     symbol: str
-    tz: Any = pytz.timezone("America/New_York")
+    tz: Any = NY_TZ
 
 @dataclass
 class PipelineDeps:

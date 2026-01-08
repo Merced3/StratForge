@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-import pytz
+from utils.timezone import NY_TZ
 from tools.normalize_ts_all import normalize_file
 from utils.json_utils import read_config
 
@@ -97,10 +97,10 @@ async def create_daily_15m_parquet(file_day_name: str):
     print_log(f"[create_daily_15m_parquet] Pulled '{len(df)}' rows for '{file_day_name}'.\n\n{df}\n")
 
     # 3) Ensure tz-aware NY timestamps -> ISO with offset for 'ts'
-    #    (data_acquisition already converts to America/New_York tz)
+    #    (data_acquisition already converts to NY tz)
     if df["timestamp"].dt.tz is None:
-        df["timestamp"] = df["timestamp"].dt.tz_localize(pytz.timezone("America/New_York"))
-    # We filter in America/New_York, but we STORE in UTC (ts epoch ms + ts_iso Z)
+        df["timestamp"] = df["timestamp"].dt.tz_localize(NY_TZ)
+    # We filter in NY time, but we STORE in UTC (ts epoch ms + ts_iso Z)
     # to avoid DST ambiguity, keep ordering/global_x stable, and align with normalize_ts_all.
     ts_iso = df["timestamp"].apply(lambda ts: ts.isoformat())
 

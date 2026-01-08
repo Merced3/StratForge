@@ -6,7 +6,7 @@ import websockets
 import asyncio
 import cred
 import json
-import pytz
+from utils.timezone import NY_TZ
 import time
 from error_handler import error_log_and_discord_message
 from shared_state import price_lock, indent, print_log
@@ -335,7 +335,7 @@ async def get_certain_candle_data(api_key, symbol, interval, timescale, start_da
         data = response.json()
         if 'results' in data:
             df = pd.DataFrame(data['results'])
-            df['timestamp'] = pd.to_datetime(df['t'], unit='ms').dt.tz_localize('UTC').dt.tz_convert(pytz.timezone('America/New_York'))
+            df['timestamp'] = pd.to_datetime(df['t'], unit='ms').dt.tz_localize('UTC').dt.tz_convert(NY_TZ)
 
             # session bounds per day (handles half-days)
             session_open, session_close = _nyse_session(start_date)

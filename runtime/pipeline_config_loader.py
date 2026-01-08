@@ -1,5 +1,5 @@
-import pytz
 from utils.json_utils import read_config
+from utils.timezone import NY_TZ
 
 TIMEFRAME_SECONDS = {
     "1M": 60, "2M": 120, "3M": 180, "5M": 300,
@@ -14,5 +14,5 @@ def load_pipeline_config():
         "durations": durations,
         "buffer_secs": read_config("CANDLE_BUFFER"),
         "symbol": read_config("SYMBOL"),
-        "tz": pytz.timezone("America/New_York"),
+        "tz": NY_TZ,
     }

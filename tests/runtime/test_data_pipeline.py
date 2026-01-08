@@ -4,11 +4,11 @@
 # tests/runtime/test_data_pipeline.py
 import asyncio, json
 import pytest
-import pytz
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 from pipeline.config import PipelineConfig, PipelineDeps, PipelineSinks
 import pipeline.data_pipeline as dp
+from utils.timezone import NY_TZ
 
 class Recorder:
     def __init__(self): self.calls = []
@@ -16,8 +16,7 @@ class Recorder:
 
 @pytest.mark.anyio
 async def test_pipeline_closes_candle(monkeypatch):
-    tz = pytz.timezone("America/New_York")
-    base = tz.localize(datetime(2024, 1, 2, 9, 30, 0))
+    base = NY_TZ.localize(datetime(2024, 1, 2, 9, 30, 0))
 
     # Fake time progression
     times = iter([
@@ -30,7 +29,7 @@ async def test_pipeline_closes_candle(monkeypatch):
     # Fake schedule: close at 09:30:02
     monkeypatch.setattr(dp, "generate_candlestick_times", lambda *a, **k: [base, base + timedelta(seconds=2)])
 
-    config = PipelineConfig(timeframes=["1M"], durations={"1M": 2}, buffer_secs=0, symbol="SPY", tz=tz)
+    config = PipelineConfig(timeframes=["1M"], durations={"1M": 2}, buffer_secs=0, symbol="SPY", tz=NY_TZ)
     deps = PipelineDeps(
         get_session_bounds=lambda _: (base, base + timedelta(seconds=2)),
         latest_price_lock=asyncio.Lock(),

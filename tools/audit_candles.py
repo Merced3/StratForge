@@ -13,6 +13,7 @@ import pandas as pd
 import pandas_market_calendars as mcal
 from typing import Optional
 from shared_state import print_log
+from utils.timezone import NY_TZ_NAME
 
 def _tf_to_minutes(tf: str) -> int:
     """Parse timeframe like '15m' or '5' into minutes."""
@@ -24,7 +25,7 @@ def _tf_to_minutes(tf: str) -> int:
     except ValueError:
         raise ValueError(f"Unsupported timeframe '{tf}'. Use minute-based TFs like 15m.")
 
-def _read_day_ts_series(day_path: Path, tz: str = "America/New_York") -> pd.Series:
+def _read_day_ts_series(day_path: Path, tz: str = NY_TZ_NAME) -> pd.Series:
     """Read a dayfile's ts as tz-aware datetimes, sorted ascending."""
     df = pd.read_parquet(day_path, columns=["ts"]).sort_values("ts")
     ts = df["ts"]
@@ -34,7 +35,7 @@ def _read_day_ts_series(day_path: Path, tz: str = "America/New_York") -> pd.Seri
         ts = pd.to_datetime(ts, utc=True)
     return ts.dt.tz_convert(tz).reset_index(drop=True)
 
-def _get_nyse_session_bounds(day_str: str, tz: str = "America/New_York") -> tuple[Optional[pd.Timestamp], Optional[pd.Timestamp]]:
+def _get_nyse_session_bounds(day_str: str, tz: str = NY_TZ_NAME) -> tuple[Optional[pd.Timestamp], Optional[pd.Timestamp]]:
     """Return NYSE market open/close for the given day in requested tz (handles early closes)."""
     try:
         cal = mcal.get_calendar("NYSE")
@@ -51,7 +52,7 @@ def _get_nyse_session_bounds(day_str: str, tz: str = "America/New_York") -> tupl
         print_log(f"[HEAL] Could not load NYSE schedule for {day_str}: {e}")
         return None, None
 
-def find_missing_days(base: Path, tz="America/New_York", max_age_days: int | None = None) -> list[str]:
+def find_missing_days(base: Path, tz: str = NY_TZ_NAME, max_age_days: int | None = None) -> list[str]:
     files = sorted(base.glob("*.parquet"))
     have = {p.stem for p in files}
     if not have:
@@ -120,7 +121,7 @@ def _check_global_x(day_path: Path) -> dict:
         "len": len(gx),
     }
 
-def audit_dayfile(day_path: Path, tf_minutes: int, tz: str = "America/New_York") -> dict:
+def audit_dayfile(day_path: Path, tf_minutes: int, tz: str = NY_TZ_NAME) -> dict:
     """Audit one dayfile for cadence, session adherence, and in-file global_x continuity."""
     day_str = day_path.stem
     ts_series = _read_day_ts_series(day_path, tz=tz)
@@ -176,7 +177,7 @@ def main():
     ap.add_argument("--pattern", default="*.parquet", help="Glob pattern (default: *.parquet)")
     ap.add_argument("--recurse", action="store_true", help="Recurse into subfolders (e.g., part-*.parquet)")
     ap.add_argument("--limit", type=int, default=None, help="Stop after N files per timeframe (debug)")
-    ap.add_argument("--tz", default="America/New_York", help="Timezone for session bounds (default: America/New_York)")
+    ap.add_argument("--tz", default=NY_TZ_NAME, help=f"Timezone for session bounds (default: {NY_TZ_NAME})")
     ap.add_argument("--max-age-days", type=int, default=1825, help="Optional window (days) for missing-day check; default 5 years")
     ap.add_argument("--verbose", action="store_true", help="Print per-file results when issues are found")
     args = ap.parse_args()

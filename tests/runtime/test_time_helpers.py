@@ -2,18 +2,16 @@
 from datetime import datetime, timedelta
 
 import pandas as pd
-import pytz
-
 from session import normalize_session_times
 from pipeline.data_pipeline import build_candle_schedule
+from utils.timezone import NY_TZ
 
 
 def test_normalize_session_times_with_pandas_timestamp():
-    ny = pytz.timezone("America/New_York")
-    ts = pd.Timestamp("2025-01-02 09:30:00", tz=ny)
+    ts = pd.Timestamp("2025-01-02 09:30:00", tz=NY_TZ)
     open_dt, close_dt = normalize_session_times(ts, ts + pd.Timedelta(hours=6, minutes=30))
-    assert open_dt.tzinfo.zone == ny.zone
-    assert close_dt.tzinfo.zone == ny.zone
+    assert open_dt.tzinfo.zone == NY_TZ.zone
+    assert close_dt.tzinfo.zone == NY_TZ.zone
     assert open_dt.hour == 9 and close_dt.hour == 16
 
 
@@ -22,8 +20,7 @@ def test_normalize_session_times_none_safe():
 
 
 def test_build_candle_schedule_basic():
-    ny = pytz.timezone("America/New_York")
-    session_open = ny.localize(datetime(2025, 1, 2, 9, 30, 0))
+    session_open = NY_TZ.localize(datetime(2025, 1, 2, 9, 30, 0))
     session_close = session_open + timedelta(minutes=2)
     timeframes = ["1M"]
     durations = {"1M": 60}

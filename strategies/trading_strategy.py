@@ -9,10 +9,10 @@ from utils.log_utils import read_last_n_lines
 from objects import candle_zone_handler, get_objects
 from buy_option import reset_usedBP_messageIDs
 from indicators.flag_manager import identify_flag, create_state
-from rule_manager import handle_rules_and_order
-from sentiment_engine import get_current_sentiment
+#from rule_manager import handle_rules_and_order
+#from sentiment_engine import get_current_sentiment
 from shared_state import indent, print_log, latest_sentiment_score
-import pytz
+from utils.timezone import NY_TZ
 import cred
 import aiohttp
 from paths import CANDLE_LOGS, PRIORITY_CANDLES_PATH
@@ -29,7 +29,7 @@ active_order = {
 
 last_processed_candle = None 
     
-new_york_tz = pytz.timezone('America/New_York')
+new_york_tz = NY_TZ
 
 MARKET_CLOSE = time(16, 0)
 MARKET_OPEN = time(9, 30)

@@ -6,11 +6,13 @@ NEXT THING TO WORK ON:
 [x] Extract `refresh_chart`:
     [x] Extract it into a small “ui” helper and inject it into the pipeline (already halfway done with sinks).
     [x] Make sure all docs reflect this change.
-[ ] Replace remaining globals with injected config or handles (e.g., feed/provider status).
+[x] Replace remaining globals with injected config or handles (e.g., feed/provider status).
     [x] work on globals in `main.py`
     [x] global providers on `data_acquisition.py` needs to be removed.
     [x] update/run test. Passed
-    [ ] Update docs to be in alignment, then commit.
-[ ] Consolidate repeated session logic into `session.py` (already underway).
-
-Key: `x` = done/working, `-` = pending/developing currently
+    [x] Update docs to be in alignment, then commit. No docs needed.
+[x] Consolidate repeated session logic into `session.py` (already underway).
+    [x] centralize the `NY_TZ` into the sessions script, its better fit. 
+Key: 
+    `x` = done/working
+    `-` = pending/developing currently

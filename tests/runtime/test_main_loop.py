@@ -8,12 +8,13 @@ from types import SimpleNamespace
 from contextlib import suppress
 
 import main
+from utils.timezone import NY_TZ
 
 pytestmark = pytest.mark.anyio("asyncio")
 
 
 async def test_main_loop_runs_process_once(dummy_config, monkeypatch):
-    now_ny = main.datetime.now(main.new_york_tz).replace(microsecond=0)
+    now_ny = main.datetime.now(NY_TZ).replace(microsecond=0)
     session_open = now_ny - timedelta(seconds=1)  # already open
     session_close = session_open + timedelta(seconds=30)  # safely after now
 
@@ -51,7 +52,7 @@ async def test_main_loop_runs_process_once(dummy_config, monkeypatch):
 
 
 async def test_main_loop_skips_if_already_closed(dummy_config, monkeypatch):
-    now_ny = main.datetime.now(main.new_york_tz).replace(microsecond=0)
+    now_ny = main.datetime.now(NY_TZ).replace(microsecond=0)
     session_close = now_ny - timedelta(seconds=1)  # already closed
     session_open = session_close - timedelta(seconds=30)
 

@@ -847,7 +847,7 @@ AUTO-HEAL A SPECIFIC DAY (bad/missing 15m candles → repair timeline/current)
 
 WHAT “PULL-REPLACE” DOES
 
-1. Reads `storage/data/15m/<DAY>.parquet` and checks 15-minute cadence in America/New_York time (half-days are OK).
+1. Reads `storage/data/15m/<DAY>.parquet` and checks 15-minute cadence in NY time (half-days are OK).
 
 2. If gaps/missing:
     - Deletes ONLY these two files for that exact DAY:
@@ -894,10 +894,10 @@ NUCLEAR OPTION (full rebuild of timeline + current)
     python objects.py
 
 TIPS / NOTES
-- Dayfiles are stored in UTC (ts epoch ms + ts_iso Z). We filter in America/New_York first, then write UTC to avoid DST ambiguity (daylight savings transitions, Fall-back and Spring-forward) and keep global_x/order consistent.
+- Dayfiles are stored in UTC (ts epoch ms + ts_iso Z). We filter in NY time first, then write UTC to avoid DST ambiguity (daylight savings transitions, Fall-back and Spring-forward) and keep global_x/order consistent.
 - After midnight, ALWAYS prefer: python objects.py pull-replace --day YYYY-MM-DD
 - Volumes in 15m dayfiles are intentionally 0.0 to match historical format.
-- Market open assumed 09:30 America/New_York; cadence check uses 15-minute steps, so half-days are handled naturally.
+- Market open assumed 09:30 NY time; cadence check uses 15-minute steps, so half-days are handled naturally.
 - The healer’s snapshot rebuild uses ALL timeline events up to the PREVIOUS day (no “step” pitfalls), then today’s EOD runs on top.
 - create_daily_15m_parquet auto-normalizes the file (ts + ts_iso), sorts by ts, preserves schema, and continues global_x correctly.
 """

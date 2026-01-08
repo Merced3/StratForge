@@ -13,9 +13,10 @@ from web_dash.assets.object_styles import draw_objects
 
 from paths import get_ema_path, get_markers_path
 from utils.ema_utils import load_ema_json
+from utils.timezone import NY_TZ_NAME
 
 _BAR_MINUTES_RE = re.compile(r"(\d+)\s*[mM]")
-TZ = "America/New_York"
+TZ = NY_TZ_NAME
 
 def _bar_minutes(tf: str) -> int:
     m = _BAR_MINUTES_RE.match(str(tf))

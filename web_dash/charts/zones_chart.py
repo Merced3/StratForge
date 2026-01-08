@@ -8,8 +8,9 @@ from utils.json_utils import read_config
 from storage.viewport import load_viewport, days_window
 from web_dash.assets.object_styles import draw_objects
 from web_dash.charts.theme import apply_layout, GREEN, RED
+from utils.timezone import NY_TZ_NAME
 
-TZ = "America/New_York"
+TZ = NY_TZ_NAME
 
 def _tf_minutes(tf: str) -> int:
     # robust: "15m", "15M" -> 15; "2m" -> 2

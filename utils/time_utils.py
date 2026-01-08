@@ -3,19 +3,18 @@ from __future__ import annotations
 from typing import Union
 import pandas as pd
 
-import pytz
 from datetime import datetime, timedelta
 import time
 
 from pathlib import Path
 from typing import Optional, Iterable
+from utils.timezone import NY_TZ
 
 # ───🔹 CANDLESTICK TIMESTAMP-MATCH FOR MAIN SCRIPT ────────────────────────
 
 def generate_candlestick_times(start_time, end_time, interval, exclude_first=False):
-    new_york_tz = pytz.timezone('America/New_York')
-    start = new_york_tz.localize(datetime.combine(datetime.today(), start_time.time()))
-    end = new_york_tz.localize(datetime.combine(datetime.today(), end_time.time()))
+    start = NY_TZ.localize(datetime.combine(datetime.today(), start_time.time()))
+    end = NY_TZ.localize(datetime.combine(datetime.today(), end_time.time()))
     
     times = []
     while start <= end:

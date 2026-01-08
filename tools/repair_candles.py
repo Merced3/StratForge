@@ -1,6 +1,7 @@
 # tools/repair_candles.py
 from __future__ import annotations
 from pathlib import Path
+from utils.timezone import NY_TZ_NAME
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,7 +93,7 @@ def main():
     ap.add_argument("--root", default="storage/data", help="Root folder containing timeframe dirs (default: storage/data)")
     ap.add_argument("--timeframe", default="15m", help="Timeframe to repair (default: 15m)")
     ap.add_argument("--max-age-days", type=int, default=1825, help="Only repair data within this many days (default: 5 years)")
-    ap.add_argument("--tz", default="America/New_York", help="Timezone for session bounds (default: America/New_York)")
+    ap.add_argument("--tz", default=NY_TZ_NAME, help=f"Timezone for session bounds (default: {NY_TZ_NAME})")
     ap.add_argument("--backoff-seconds", type=int, default=10, help="Delay between retries when a rebuild fails (default: 10s)")
     args = ap.parse_args()
 

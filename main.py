@@ -17,12 +17,12 @@ from datetime import datetime, timedelta
 from typing import Optional
 from objects import process_end_of_day_15m_candles_for_objects, pull_and_replace_15m
 import cred
-import pytz
+from utils.timezone import NY_TZ
 from paths import TERMINAL_LOG, SPY_15M_ZONE_CHART_PATH, SPY_2M_CHART_PATH, SPY_5M_CHART_PATH, SPY_15M_CHART_PATH, DATA_DIR, get_ema_path
 import subprocess
 from pipeline.data_pipeline import run_pipeline
 from pipeline.config import PipelineConfig, PipelineDeps, PipelineSinks
-from session import get_session_bounds, normalize_session_times, is_market_open
+from session import get_session_bounds, normalize_session_times, is_market_open, wait_until_market_open
 from runtime.pipeline_config_loader import load_pipeline_config
 from storage.parquet_writer import append_candle
 from indicators.ema_manager import update_ema
@@ -35,9 +35,6 @@ async def bot_start():
     print_log("Discord bot started.")
 
 _auto_heal_task = None
-
-# Define New York timezone
-new_york_tz = pytz.timezone('America/New_York')
 
 async def initial_setup():
     await bot.wait_until_ready()
@@ -52,7 +49,7 @@ async def main():
         try:
             pipeline_cfg = load_pipeline_config()
             # Get the current time in New York timezone
-            current_time = datetime.now(new_york_tz)
+            current_time = datetime.now(NY_TZ)
             current_date = current_time.date()  # Extract the date (e.g., 2024-06-12)
 
             session_open, session_close = get_session_bounds(current_date.strftime("%Y-%m-%d"))
@@ -104,10 +101,10 @@ async def main_loop(session_open, session_close):
     queue = asyncio.Queue()
     session_open, session_close = normalize_session_times(session_open, session_close)
 
-    current_time = datetime.now(new_york_tz)
+    current_time = datetime.now(NY_TZ)
     market_open_time = session_open
     market_close_time = session_close
-    trading_day_str = market_close_time.astimezone(new_york_tz).strftime("%Y-%m-%d")
+    trading_day_str = market_close_time.astimezone(NY_TZ).strftime("%Y-%m-%d")
     config = PipelineConfig(**load_pipeline_config())
 
     if not market_open_time or not market_close_time:
@@ -119,7 +116,7 @@ async def main_loop(session_open, session_close):
         return
 
     if current_time < market_open_time:
-        await wait_until_market_open(market_open_time, new_york_tz)
+        await wait_until_market_open(market_open_time, NY_TZ)
 
     initialize_csv_order_log()
 
@@ -153,17 +150,6 @@ async def main_loop(session_open, session_close):
             await process_end_of_day(trading_day_str)
         else:
             print_log("[INFO] Session ended without intraday work; skipping EOD.")
-
-async def wait_until_market_open(target_time, tz):
-    print_log(f"Waiting for market open at {target_time.strftime('%H:%M:%S')}...")
-    while True:
-        now = datetime.now(tz)
-        remaining = (target_time - now).total_seconds()
-        if remaining <= 0.2:
-            break
-        # sleep in larger chunks until the last second
-        await asyncio.sleep(min(remaining - 0.1, 1.0))
-    print_log("Market open hit; starting...")
 
 async def process_end_of_day(trading_day_str: Optional[str] = None):
     # 1. Get balances and calculate P/L
@@ -207,7 +193,7 @@ async def process_end_of_day(trading_day_str: Optional[str] = None):
     reset_profit_loss_orders_list()
 
     # 6. Storage compaction (safe to call daily; no-op if nothing to do)
-    day = trading_day_str or datetime.now(new_york_tz).strftime("%Y-%m-%d")
+    day = trading_day_str or datetime.now(NY_TZ).strftime("%Y-%m-%d")
     end_of_day_compaction(day, TFs=["2m","5m","15m"])
     process_end_of_day_15m_candles_for_objects()
     schedule_auto_heal(day) # Just incase of any data issues, websocket drops, missing candles, ect.
@@ -226,7 +212,7 @@ def schedule_auto_heal(day_str: str, delay_minutes: int = 20):
         audit = None
         try:
             if day_path.exists():
-                audit = audit_dayfile(day_path, tf_minutes=15, tz=new_york_tz)
+                audit = audit_dayfile(day_path, tf_minutes=15, tz=NY_TZ)
                 if audit.get("missing_count") == 0 and audit.get("extras_count") == 0 and audit.get("gx_ok"):
                     print_log(f"[AUTO-HEAL] Audit clean for {day_str}; skipping heal.")
                     return

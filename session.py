@@ -1,9 +1,11 @@
 # session.py
+import asyncio
 import cred
 import aiohttp
 import pandas_market_calendars as mcal
 from datetime import datetime
 from shared_state import print_log
+from utils.timezone import NY_TZ_NAME
 
 def normalize_session_times(session_open, session_close):
     if not session_open or not session_close:
@@ -23,8 +25,8 @@ def _nyse_session(day_str: str):
     row = sched.iloc[0]
     # keep tz-aware NY times
     return (
-        row["market_open"].tz_convert("America/New_York"),
-        row["market_close"].tz_convert("America/New_York"),
+        row["market_open"].tz_convert(NY_TZ_NAME),
+        row["market_close"].tz_convert(NY_TZ_NAME),
     )
 
 async def is_market_open():
@@ -46,3 +48,14 @@ async def is_market_open():
     except Exception as e:
         print_log(f"[ERROR] Exception in is_market_open: {e}")
         return False
+
+async def wait_until_market_open(target_time, tz):
+    print_log(f"Waiting for market open at {target_time.strftime('%H:%M:%S')}...")
+    while True:
+        now = datetime.now(tz)
+        remaining = (target_time - now).total_seconds()
+        if remaining <= 0.2:
+            break
+        # sleep in larger chunks until the last second
+        await asyncio.sleep(min(remaining - 0.1, 1.0))
+    print_log("Market open hit; starting...")

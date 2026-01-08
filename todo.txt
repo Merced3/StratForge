@@ -1,12 +1,10 @@
 Everything I'm focusing is:
 Decoupling, I want to make this current system as simple, modular, easy to change, as possible.
-So that if i do want to make changes and update those changes, as its running - to other system's the other systems don't fail.
+So that if I do want to make changes and update those changes, as its running - to other system's the other systems don't fail.
 
 NEXT THING TO WORK ON:
 [x] Fix healing error/warning message. *maybe, we will see with tomorrows run*
-[ ] work on Central option contract system.
-    [ ] 
-    [ ] 
+[-] work on Central option contract system.
 
 Key: 
     [x] = done/working

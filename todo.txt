@@ -3,16 +3,11 @@ Decoupling, I want to make this current system as simple, modular, easy to chang
 So that if i do want to make changes and update those changes, as its running - to other system's the other systems don't fail.
 
 NEXT THING TO WORK ON:
-[x] Extract `refresh_chart`:
-    [x] Extract it into a small “ui” helper and inject it into the pipeline (already halfway done with sinks).
-    [x] Make sure all docs reflect this change.
-[x] Replace remaining globals with injected config or handles (e.g., feed/provider status).
-    [x] work on globals in `main.py`
-    [x] global providers on `data_acquisition.py` needs to be removed.
-    [x] update/run test. Passed
-    [x] Update docs to be in alignment, then commit. No docs needed.
-[x] Consolidate repeated session logic into `session.py` (already underway).
-    [x] centralize the `NY_TZ` into the sessions script, its better fit. 
+[x] Fix healing error/warning message. *maybe, we will see with tomorrows run*
+[ ] work on Central option contract system.
+    [ ] 
+    [ ] 
+
 Key: 
-    `x` = done/working
-    `-` = pending/developing currently
+    [x] = done/working
+    [-] = pending/developing currently

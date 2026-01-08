@@ -676,7 +676,7 @@ def _rebuild_current_snapshot_asof_day(cutoff_day: str) -> None:
             for c in cols_keep:
                 if c not in df.columns:
                     df[c] = pd.NA
-            df = df[cols_keep]
+            df = df.loc[:, cols_keep].copy()
 
             # normalize types
             df["ts"] = (pd.to_datetime(df["ts"], utc=True, errors="coerce")

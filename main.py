@@ -6,7 +6,6 @@ from utils.order_utils import initialize_csv_order_log
 from indicators.ema_manager import hard_reset_ema_state, migrate_ema_state_schema
 from tools.compact_parquet import end_of_day_compaction
 from tools.audit_candles import audit_dayfile
-from indicators.flag_manager import clear_all_states
 from economic_calender_scraper import ensure_economic_calendar_data, setup_economic_news_message
 from print_discord_messages import bot, print_discord, send_file_discord, calculate_day_performance
 from error_handler import error_log_and_discord_message
@@ -187,7 +186,7 @@ async def process_end_of_day(trading_day_str: Optional[str] = None):
     update_config_value('START_OF_DAY_BALANCE', end_of_day_account_balance)
 
     # 5. Reset all data for next session
-    clear_all_states()
+    #clear_all_states() # from flag manager script
     clear_temp_logs_and_order_files()
     #reset_profit_loss_orders_list()
 

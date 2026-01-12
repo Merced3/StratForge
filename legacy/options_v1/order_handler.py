@@ -7,7 +7,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from print_discord_messages import bot, print_discord, edit_discord_message, get_message_content
-from submit_order import submit_option_order, get_order_status
+#from submit_order import submit_option_order, get_order_status
 from error_handler import error_log_and_discord_message, print_log
 from data_acquisition import add_markers, get_current_candle_index, get_current_price
 from utils.json_utils import read_config
@@ -463,11 +463,13 @@ async def sell(quantity, unique_order_key, message_ids_dict, reason_for_selling)
         return None, None, None
     print_log(f"    [ORDER DETIALS] REASON FOR SELLING: {reason_for_selling}")
     #execute sell
-    order_result = await submit_option_order(
-        "FLAG/ZONE STRAT", symbol, strike, cp, bid, expiration_date, quantity, side, order_type
-    )
+    order_result = None #await submit_option_order(
+        #"FLAG/ZONE STRAT", symbol, strike, cp, bid, expiration_date, quantity, side, order_type
+    #)
     if order_result:
-        unique_order_ID, order_bid_price, order_quantity = await get_order_status(
+        unique_order_ID, order_bid_price, order_quantity = None, None, None
+        """
+        await get_order_status(
             strategy_name=None,
             real_money_activated=read_config('REAL_MONEY_ACTIVATED'),
             order_id=order_result['order_id'],
@@ -479,7 +481,7 @@ async def sell(quantity, unique_order_key, message_ids_dict, reason_for_selling)
             order_timestamp=timestamp_from_order_id,
             message_ids_dict=message_ids_dict
         )
-
+        """
         print_log(f"    [ORDER DETIALS] sell() = {order_bid_price}, {order_quantity}, {True}\n")
 
         return order_bid_price, order_quantity, True
@@ -600,7 +602,7 @@ async def sell_rest_of_active_order(reason_for_selling, retry_limit=3):
             return False  # Indicate failure after all retries
 
         return True
-    else: # this section is for 'submit_option_order_v2()' 
+    else: # this section is for our custom local paper trading system
         sell_quantity = order_quantity - sum(sale['quantity'] for sale in order_adjustments)
         parts = unique_order_id.split('-')
         if len(parts) >= 5:

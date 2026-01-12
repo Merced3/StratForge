@@ -1,7 +1,7 @@
 # buy_option.py
 from error_handler import error_log_and_discord_message
 from order_handler import get_unique_order_id_and_is_active, manage_active_order
-from submit_order import find_what_to_buy, submit_option_order, get_order_status
+from legacy.options_v1.submit_order import find_what_to_buy, submit_option_order, get_order_status
 from utils.order_utils import get_expiration, calculate_quantity, build_active_order
 from utils.json_utils import read_config
 from data_acquisition import get_account_balance, add_markers
@@ -122,4 +122,3 @@ Order Cost Buffer exceded BP
     except Exception as e:
         await error_log_and_discord_message(e, "buy_option", "buy_option_cp")
         return False, None, None, None, None, f"Error: {e}"
-

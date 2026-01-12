@@ -10,7 +10,6 @@ from indicators.flag_manager import clear_all_states
 from economic_calender_scraper import ensure_economic_calendar_data, setup_economic_news_message
 from print_discord_messages import bot, print_discord, send_file_discord, calculate_day_performance
 from error_handler import error_log_and_discord_message
-from order_handler import get_profit_loss_orders_list, reset_profit_loss_orders_list
 from shared_state import print_log
 import asyncio
 from datetime import datetime, timedelta
@@ -155,7 +154,7 @@ async def process_end_of_day(trading_day_str: Optional[str] = None):
     # 1. Get balances and calculate P/L
     rma = read_config('REAL_MONEY_ACTIVATED')
     start_of_day_account_balance = await get_account_balance(rma) if rma else read_config('START_OF_DAY_BALANCE')
-    todays_profit_loss = sum(get_profit_loss_orders_list())
+    todays_profit_loss = 0 #sum(get_profit_loss_orders_list())
     end_of_day_account_balance = start_of_day_account_balance + todays_profit_loss
     
     # 2. Announce/report to Discord
@@ -190,7 +189,7 @@ async def process_end_of_day(trading_day_str: Optional[str] = None):
     # 5. Reset all data for next session
     clear_all_states()
     clear_temp_logs_and_order_files()
-    reset_profit_loss_orders_list()
+    #reset_profit_loss_orders_list()
 
     # 6. Storage compaction (safe to call daily; no-op if nothing to do)
     day = trading_day_str or datetime.now(NY_TZ).strftime("%Y-%m-%d")

@@ -248,6 +248,33 @@ python -m pytest tests/options_unit_tests
 python -m options.quote_hub --symbol SPY --expiration 0dte --poll-interval 1 --log-every 5 --run-seconds 30
 ```
 
+### Offline hub (synthetic quotes)
+
+```bash
+python -m options.quote_hub --symbol SPY --expiration 0dte --mock --run-seconds 30
+```
+
+### Offline hub (replay recorded data)
+
+1) Record snapshots from live data:
+
+```bash
+python -m options.quote_hub --symbol SPY --expiration 0dte --record fixtures/spy_0dte.jsonl --run-seconds 60
+```
+
+2) Replay offline:
+
+```bash
+python -m options.quote_hub --symbol SPY --expiration 0dte --fixture fixtures/spy_0dte.jsonl --run-seconds 30
+```
+
+**Fixture format (JSONL):**
+Each line is a JSON list of quote dicts:
+
+```bash
+[{"symbol":"SPY","option_type":"call","strike":690.0,"expiration":"20260112","bid":1.2,"ask":1.3,"last":1.25}]
+```
+
 ---
 
 ## 7) Design principles used here

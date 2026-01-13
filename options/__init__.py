@@ -6,6 +6,13 @@ from .execution_tradier import (
     TradierOrderExecutor,
 )
 from .execution_paper import PaperOrder, PaperOrderError, PaperOrderExecutor
+from .mock_provider import (
+    MockProviderError,
+    RecordingOptionsProvider,
+    ReplayOptionsProvider,
+    SyntheticOptionsProvider,
+    SyntheticQuoteConfig,
+)
 from .selection import (
     ContractSelector,
     DEFAULT_SELECTOR_REGISTRY,
@@ -35,6 +42,7 @@ __all__ = [
     "PaperOrder",
     "PaperOrderError",
     "PaperOrderExecutor",
+    "MockProviderError",
     "ContractSelector",
     "DEFAULT_SELECTOR_REGISTRY",
     "PriceRangeOtmSelector",
@@ -42,7 +50,11 @@ __all__ = [
     "SelectionRequest",
     "SelectionResult",
     "SelectorRegistry",
+    "RecordingOptionsProvider",
+    "ReplayOptionsProvider",
     "select_contract",
+    "SyntheticOptionsProvider",
+    "SyntheticQuoteConfig",
     "TradierOrderError",
     "TradierOrderExecutor",
     "TradierOptionsProvider",

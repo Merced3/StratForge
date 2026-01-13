@@ -28,6 +28,7 @@ If it explains how/why the system works (not just what it does), it belongs in `
   4.2 Module Breakdown  
   4.3 Data Flow & Storage Locations  
   4.4 See `docs/adr/` for key technical decisions and tradeoffs  
+  4.5 Options subsystem study sheet (`docs/architecture/options-subsystem.md`)
 
 5. **Data Acquisition**
   5.1 Live Market Data Sources  

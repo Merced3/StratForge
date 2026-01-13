@@ -4,7 +4,11 @@ So that if I do want to make changes and update those changes, as its running - 
 
 NEXT THING TO WORK ON:
 [x] Fix healing error/warning message. *maybe, we will see with tomorrows run*
-[-] work on Central option contract system.
+[x] work on Central option contract system.
+    [x] get central hub working
+    [-] get buying/selling working
+        [ ] Setup quote Sim-Env. There will be times we need to test when market is not open.
+        [ ] setup tests
 
 Key: 
     [x] = done/working

@@ -1,0 +1,290 @@
+# Options Subsystem (Study Sheet)
+
+This document is a **study sheet** for the options subsystem under `options/`.
+It explains the mental model, the entry points, and how the parts connect so you
+can revisit it later and remember how to work on it safely.
+
+---
+
+## 1) What this subsystem is for
+
+The options subsystem provides a **centralized options chain cache** and a
+simple, decoupled way to:
+
+1. Fetch and cache options quotes (bid/ask/last).
+2. Select a contract (strike) based on a rule/selector.
+3. Execute an order in either **paper mode** or **real broker mode**.
+
+The key design goal: **simple, decoupled, easy to change**.
+Each stage can be replaced without rewriting the others.
+
+---
+
+## 2) High-level data flow (the pipeline)
+
+```bash
+Tradier (or other provider)
+        |
+        v
+OptionsProvider.fetch_quotes()
+        |
+        v
+OptionQuoteService (cache + change stream)
+        |
+        +----> selection.select_contract(...)  -> picks a contract
+        |
+        +----> PaperOrderExecutor / TradierOrderExecutor
+```
+
+**In plain language:**
+
+1) Provider pulls the full chain from Tradier.
+2) Quote service caches it and emits **only changed quotes**.
+3) Selector chooses which contract to trade.
+4) Executor submits or simulates the order.
+
+---
+
+## 3) Files and their responsibilities
+
+### `options/quote_service.py`
+
+**Purpose:** Central cache + event stream of option quotes.
+
+Key pieces:
+
+- `OptionContract`: unique identifier for a contract.
+- `OptionQuote`: bid/ask/last + metadata.
+- `OptionsProvider` protocol: any provider that can fetch quotes.
+- `TradierOptionsProvider`: concrete provider for Tradier.
+- `OptionQuoteService`: poll loop, cache, and listener/queue updates.
+
+**Entry points:**
+
+- `OptionQuoteService.start()` -> starts polling
+- `OptionQuoteService.stop()` -> stops polling
+- `OptionQuoteService.get_snapshot()` -> returns full cache
+- `OptionQuoteService.get_quote(contract_key)` -> returns one quote
+- `OptionQuoteService.register_listener(callback)` -> push updates to a function
+- `OptionQuoteService.register_queue(...)` -> push updates to a queue
+
+**Why it exists:**
+Instead of every order calling Tradier, this pulls once and shares the cache.
+It reduces API calls and makes the system less fragile.
+
+---
+
+### `options/quote_hub.py`
+
+**Purpose:** Standalone CLI runner for the quote cache.
+
+It starts `OptionQuoteService`, logs summary stats, and exits on Ctrl+C
+or after `--run-seconds`.
+
+**Entry point:**
+
+- `python -m options.quote_hub ...`
+
+**Useful flags:**
+
+- `--poll-interval` -> how often to hit Tradier
+- `--log-every` -> how often to print a summary
+- `--run-seconds` -> auto-stop timer
+- `--expiration` -> `0dte`, `YYYY-MM-DD`, or `YYYYMMDD`
+
+**What it proves:** The cache is live and updating.
+
+---
+
+### `options/selection.py`
+
+**Purpose:** Choose a contract/strike from cached quotes.
+
+Key pieces:
+
+- `SelectionRequest`: defines the selection context.
+- `SelectionResult`: result + reason.
+- `ContractSelector` protocol: interface for selector strategies.
+- `PriceRangeOtmSelector`: default selector (price-range + OTM logic).
+- `SelectorRegistry`: registry of named selectors.
+
+**Entry points:**
+
+- `select_contract(quotes, request, selector_name)`
+- `DEFAULT_SELECTOR_REGISTRY.register(...)` to add custom selectors.
+
+**Why it exists:** strategy can swap selection logic without touching
+quote fetching or order execution.
+
+---
+
+### `options/execution_paper.py`
+
+**Purpose:** Simulated order execution using cached quotes (primary mode).
+
+Key pieces:
+
+- `PaperOrderExecutor`: fills orders using bid/ask from cache.
+
+**How fills work:**
+
+- Buy -> uses ask (fallback: mid, last, bid).
+- Sell -> uses bid (fallback: mid, last, ask).
+- Limit orders only fill if price crosses.
+- Orders stored in memory; `get_order_status()` returns status.
+
+**Entry points:**
+
+- `PaperOrderExecutor.submit_option_order(...)`
+- `PaperOrderExecutor.get_order_status(order_id)`
+
+**Why it exists:** Run strategies without broker latency/limits.
+
+---
+
+### `options/execution_tradier.py`
+
+**Purpose:** Real order execution via Tradier.
+
+Key pieces:
+
+- `TradierOrderExecutor`: submit + status via Tradier endpoints.
+- `OptionOrderRequest`: shared order request model.
+
+**Entry points:**
+
+- `TradierOrderExecutor.submit_option_order(...)`
+- `TradierOrderExecutor.get_order_status(order_id)`
+
+**Why it exists:** swap paper fills for real broker mode without changing
+the rest of the system.
+
+---
+
+## 4) Key interfaces (what plugs into what)
+
+### Quote Provider Interface
+
+```bash
+class OptionsProvider(Protocol):
+    async def fetch_quotes(symbol, expiration) -> List[OptionQuote]
+```
+
+Swap Tradier with another provider by implementing this one method.
+
+### Selection Interface
+
+```bash
+class ContractSelector(Protocol):
+    name: str
+    def select(quotes, request) -> Optional[SelectionResult]
+```
+
+Add new contract selection methods without changing the cache or executor.
+
+### Execution Interface
+
+Both executors accept:
+
+```bash
+OptionOrderRequest(
+    symbol, option_type, strike, expiration,
+    quantity, side, order_type, limit_price
+)
+```
+
+Paper and Tradier share the same request structure.
+
+---
+
+## 5) Common usage patterns
+
+### Pattern A: Just run the quote hub
+
+```bash
+python -m options.quote_hub --symbol SPY --expiration 0dte --poll-interval 1 --log-every 5
+```
+
+Use this when you want to verify the cache and rate limits.
+
+### Pattern B: Pick a contract from the cache
+
+```bash
+snapshot = quote_service.get_snapshot()
+result = select_contract(
+    quotes=snapshot.values(),
+    request=SelectionRequest(
+        symbol="SPY",
+        option_type="call",
+        expiration="20260112",
+        underlying_price=690.0,
+        max_otm=5.0,
+    ),
+    selector_name="price-range-otm",
+)
+```
+
+### Pattern C: Paper buy + sell
+
+```bash
+paper = PaperOrderExecutor(quote_service.get_quote)
+submit = await paper.submit_option_order(request)
+status = await paper.get_order_status(submit.order_id)
+```
+
+---
+
+## 6) How to test quickly
+
+### Unit tests
+
+```bash
+python -m pytest tests/options_unit_tests
+```
+
+### Live hub smoke test
+
+```bash
+python -m options.quote_hub --symbol SPY --expiration 0dte --poll-interval 1 --log-every 5 --run-seconds 30
+```
+
+---
+
+## 7) Design principles used here
+
+- **Decoupled:** cache, selection, and execution are independent.
+- **Pluggable:** providers and selectors can be swapped.
+- **Simple defaults:** a single selector and a simple paper executor.
+- **Low API usage:** one chain poll feeds all consumers.
+
+---
+
+## 8) FAQ / future reminders
+
+**Q: Why not call Tradier from every order?**  
+Because it wastes API calls and risks rate limits. The cache is safer and faster.
+
+**Q: Can we use non-0DTE?**  
+Yes. Pass any expiration date. `quote_hub.py` accepts `YYYY-MM-DD` or `YYYYMMDD`.
+
+**Q: How do we add a new selector?**  
+Create a class with `name` + `select()`, then register it in `SelectorRegistry`.
+
+**Q: How do we add a new provider?**  
+Implement `fetch_quotes()` and pass it into `OptionQuoteService`.
+
+---
+
+## 9) Current limitations
+
+- Paper execution does not model latency, slippage, or partial fills.
+- Quote cache is single-symbol, single-expiration per service instance.
+- The order manager (multi-order lifecycle) is not wired yet.
+
+---
+
+## 10) Next steps (optional)
+
+- Add an order manager that consumes cached quotes and manages multiple open orders.
+- Add a mock provider for offline testing.
+- Add selection strategies for tighter spreads or IV filters.

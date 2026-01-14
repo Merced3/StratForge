@@ -197,6 +197,33 @@ pos-SPY-call-500p5-20260106-tag-flag_zone-20260112123456789012
 
 ---
 
+### `options/position_watcher.py`
+
+**Purpose:** Watch open positions and stream updates from the quote cache.
+
+Key pieces:
+
+- `PositionWatcher`: polls active positions, subscribes to the right contracts,
+  and emits updates when quotes change.
+- `PositionUpdate`: payload containing mark price, P&L, and position metadata.
+
+**Entry points:**
+
+- `PositionWatcher.start()` -> begin watching
+- `PositionWatcher.stop()` -> stop watching
+- `PositionWatcher.register_listener(callback)` -> push updates to a function
+- `PositionWatcher.register_queue(...)` -> push updates to a queue
+
+**How mark price is picked:**
+
+`bid` -> `mid` -> `last` -> `ask` (first available).
+
+**Why it exists:**
+It decouples real-time quote tracking from strategy logic so strategies can
+react without re-polling the provider.
+
+---
+
 ## 4) Key interfaces (what plugs into what)
 
 ### Quote Provider Interface
@@ -276,6 +303,18 @@ open_result = await manager.open_position(request, quantity=2, strategy_tag="fla
 await manager.add_to_position(open_result.position_id, quantity=1)
 await manager.trim_position(open_result.position_id, quantity=1)
 await manager.close_position(open_result.position_id)
+```
+
+### Pattern E: Watch position updates
+
+```bash
+watcher = PositionWatcher(quote_service, manager.list_positions)
+listener_id, queue = watcher.register_queue()
+await watcher.start()
+
+updates = await queue.get()
+for update in updates:
+    print(update.position_id, update.mark_price, update.unrealized_pnl)
 ```
 
 ---
@@ -358,7 +397,7 @@ Implement `fetch_quotes()` and pass it into `OptionQuoteService`.
 
 - Paper execution does not model latency, slippage, or partial fills.
 - Quote cache is single-symbol, single-expiration per service instance.
-- The order manager (multi-order lifecycle) is not wired yet.
+- Order manager and watcher are not wired into runtime/strategies yet.
 
 ---
 

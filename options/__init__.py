@@ -28,6 +28,7 @@ from .order_manager import (
     Position,
     PositionActionResult,
 )
+from .position_watcher import PositionUpdate, PositionWatcher
 from .quote_service import (
     OptionContract,
     OptionQuote,
@@ -53,6 +54,8 @@ __all__ = [
     "OptionsOrderManager",
     "Position",
     "PositionActionResult",
+    "PositionUpdate",
+    "PositionWatcher",
     "ContractSelector",
     "DEFAULT_SELECTOR_REGISTRY",
     "PriceRangeOtmSelector",

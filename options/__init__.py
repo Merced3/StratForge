@@ -22,6 +22,7 @@ from .selection import (
     SelectorRegistry,
     select_contract,
 )
+from .order_manager import OptionsOrderManager, OrderContext
 from .quote_service import (
     OptionContract,
     OptionQuote,
@@ -43,6 +44,8 @@ __all__ = [
     "PaperOrderError",
     "PaperOrderExecutor",
     "MockProviderError",
+    "OrderContext",
+    "OptionsOrderManager",
     "ContractSelector",
     "DEFAULT_SELECTOR_REGISTRY",
     "PriceRangeOtmSelector",

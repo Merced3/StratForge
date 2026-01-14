@@ -242,6 +242,12 @@ status = await paper.get_order_status(submit.order_id)
 python -m pytest tests/options_unit_tests
 ```
 
+### Integration test (synthetic provider + real hub loop)
+
+```bash
+python -m pytest tests/options_integration_tests/test_order_flow.py
+```
+
 ### Live hub smoke test
 
 ```bash

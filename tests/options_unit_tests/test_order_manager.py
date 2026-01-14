@@ -65,3 +65,42 @@ async def test_order_manager_buy_and_sell():
     sell_context = manager.get_context(sell_result.order_id)
     assert sell_context is not None
     assert sell_context.side == "sell_to_close"
+
+
+@pytest.mark.anyio
+async def test_order_manager_positions_trim_add_close():
+    quotes = [
+        _make_quote("SPY", "call", 101.0, "20260106", bid=0.2, ask=0.25),
+        _make_quote("SPY", "call", 102.0, "20260106", bid=0.3, ask=0.4),
+    ]
+    service = SnapshotQuoteService(quotes)
+    executor = PaperOrderExecutor(service.get_quote)
+    manager = OptionsOrderManager(service, executor)
+
+    request = SelectionRequest(
+        symbol="SPY",
+        option_type="call",
+        expiration="20260106",
+        underlying_price=100.0,
+        max_otm=5.0,
+    )
+
+    open_result = await manager.open_position(request, quantity=2)
+    position = manager.get_position(open_result.position_id)
+    assert position is not None
+    assert position.quantity_open == 2
+    assert position.status == "open"
+
+    await manager.add_to_position(open_result.position_id, quantity=1)
+    position = manager.get_position(open_result.position_id)
+    assert position.quantity_open == 3
+
+    await manager.trim_position(open_result.position_id, quantity=1)
+    position = manager.get_position(open_result.position_id)
+    assert position.quantity_open == 2
+    assert position.realized_pnl != 0.0
+
+    await manager.close_position(open_result.position_id)
+    position = manager.get_position(open_result.position_id)
+    assert position.quantity_open == 0
+    assert position.status == "closed"

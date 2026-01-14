@@ -161,6 +161,42 @@ the rest of the system.
 
 ---
 
+### `options/order_manager.py`
+
+**Purpose:** Orchestration layer that connects quotes, selection, and execution.
+
+Key pieces:
+
+- `OptionsOrderManager`: buy/sell and position lifecycle methods.
+- `Position`: tracks open quantity, average entry, realized P&L, and status.
+- `OrderContext`: tracks each submitted order and links it to a position.
+
+**Entry points:**
+
+- `open_position(...)` -> select + submit buy, returns `position_id`
+- `add_to_position(position_id, qty)` -> buy more
+- `trim_position(position_id, qty)` -> sell some
+- `close_position(position_id)` -> sell remaining
+- `get_status(order_id)` -> refresh status from executor
+
+**Position IDs:**
+
+IDs are human-readable for debugging:
+
+```bash
+pos-<SYMBOL>-<TYPE>-<STRIKE>-<EXP>-tag-<TAG>-<TIMESTAMP>
+```
+
+Example:
+
+```bash
+pos-SPY-call-500p5-20260106-tag-flag_zone-20260112123456789012
+```
+
+`tag-...` is included only if a strategy tag is provided.
+
+---
+
 ## 4) Key interfaces (what plugs into what)
 
 ### Quote Provider Interface
@@ -232,6 +268,16 @@ submit = await paper.submit_option_order(request)
 status = await paper.get_order_status(submit.order_id)
 ```
 
+### Pattern D: Position lifecycle (open/add/trim/close)
+
+```bash
+manager = OptionsOrderManager(quote_service, paper_executor)
+open_result = await manager.open_position(request, quantity=2, strategy_tag="flag_zone")
+await manager.add_to_position(open_result.position_id, quantity=1)
+await manager.trim_position(open_result.position_id, quantity=1)
+await manager.close_position(open_result.position_id)
+```
+
 ---
 
 ## 6) How to test quickly
@@ -264,15 +310,15 @@ python -m options.quote_hub --symbol SPY --expiration 0dte --mock --run-seconds 
 
 1) Record snapshots from live data:
 
-```bash
-python -m options.quote_hub --symbol SPY --expiration 0dte --record fixtures/spy_0dte.jsonl --run-seconds 60
-```
+    ```bash
+    python -m options.quote_hub --symbol SPY --expiration 0dte --record fixtures/spy_0dte.jsonl --run-seconds 60
+    ```
 
-2) Replay offline:
+1) Replay offline:
 
-```bash
-python -m options.quote_hub --symbol SPY --expiration 0dte --fixture fixtures/spy_0dte.jsonl --run-seconds 30
-```
+    ```bash
+    python -m options.quote_hub --symbol SPY --expiration 0dte --fixture fixtures/spy_0dte.jsonl --run-seconds 30
+    ```
 
 **Fixture format (JSONL):**
 Each line is a JSON list of quote dicts:

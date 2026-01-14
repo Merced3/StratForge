@@ -51,17 +51,18 @@ async def test_order_flow_with_synthetic_provider():
                 underlying_price=config.underlying_price,
                 max_otm=3.0,
             )
-        submit = await manager.buy(request, quantity=1)
-        status = await manager.get_status(submit.order_id)
+        open_result = await manager.open_position(request, quantity=1)
+        status = await manager.get_status(open_result.order_result.order_id)
 
         assert status.status == "filled"
         assert status.avg_fill_price is not None
 
-        context = manager.get_context(submit.order_id)
-        assert context is not None
+        position = manager.get_position(open_result.position_id)
+        assert position is not None
 
-        sell_submit = await manager.sell(context.contract, quantity=1)
-        sell_status = await manager.get_status(sell_submit.order_id)
+        sell_submit = await manager.close_position(open_result.position_id)
+        assert sell_submit is not None
+        sell_status = await manager.get_status(sell_submit.order_result.order_id)
         assert sell_status.status == "filled"
         assert sell_status.avg_fill_price is not None
     finally:

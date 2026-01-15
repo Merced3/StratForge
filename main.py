@@ -7,7 +7,7 @@ from indicators.ema_manager import hard_reset_ema_state, migrate_ema_state_schem
 from tools.compact_parquet import end_of_day_compaction
 from tools.audit_candles import audit_dayfile
 from economic_calender_scraper import ensure_economic_calendar_data, setup_economic_news_message
-from print_discord_messages import bot, print_discord, send_file_discord, calculate_day_performance
+from integrations.discord.client import bot, print_discord, send_file_discord, calculate_day_performance
 from error_handler import error_log_and_discord_message
 from shared_state import print_log
 import asyncio

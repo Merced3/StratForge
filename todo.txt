@@ -10,14 +10,20 @@ NEXT THING TO WORK ON:
         [x] Setup quote Sim-Env. There will be times we need to test when market is not open.
         [x] setup tests
         [x] Build Position Order Watcher
-    [ ] wire position watcher into runtime/strategies OR Higher level Integration Tests.
-[ ] Discord folder, `integrations/dicsord/`, 
-    [ ] Make this decoupled from the whole system, easy to change/add too.
-    [ ] Goal MOVE `print_discord_messages.py` into that folder so the root NOW is clueless on what discord actually does.
-    [ ] `client.py` → thin wrappers for send/edit/file (can reuse `print_discord_messages.py` under the hood).
-    [ ] `templates.py` → all message formats in one place.
-    [ ] `__init__.py` makes imports predictable, if thats what we want to do. where we can make this discord folder drag and drop the `integrations/discord/` folder into other projects with only changing stuff in the `templates.py` file. Thats not the "goal" but it keeps us to keep it decoupled and good code.
-    [ ] `README.md` → usage + examples.
+[ ] wire position watcher into runtime/strategies OR Higher level Integration Tests.
+[x] Discord folder, `integrations/dicsord/`, 
+    [x] Make this decoupled from the whole system, easy to change/add too.
+    [x] Goal MOVE `print_discord_messages.py` into that folder so the root NOW is clueless on what discord actually does.
+    [x] `client.py` → thin wrappers for send/edit/file (can reuse `print_discord_messages.py` under the hood).
+    [x] `templates.py` → all message formats in one place.
+    [x] `__init__.py` makes imports predictable
+        - if thats what we want to do. 
+        - Where we can make this discord folder drag and 
+        drop the `integrations/discord/` folder into other
+        projects with only changing stuff in the `templates.py`
+        file.
+        - Thats not the "goal" but it keeps us to write good code.
+    [x] `README.md` → usage + examples.
 
 Key: 
     [x] = done/working

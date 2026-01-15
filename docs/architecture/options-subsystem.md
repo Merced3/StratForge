@@ -224,6 +224,35 @@ react without re-polling the provider.
 
 ---
 
+### `runtime/market_bus.py`
+
+**Purpose:** In-process event bus for candle-close events.
+
+Key pieces:
+
+- `MarketEventBus`: register listeners or queues for `CandleCloseEvent`.
+- `CandleCloseEvent`: payload emitted after a candle is finalized.
+
+**Why it exists:**
+It lets the pipeline publish a single event that can be consumed by strategies, watchers, or chart refreshers without adding HTTP or file polling.
+
+---
+
+### `runtime/options_strategy_runner.py`
+
+**Purpose:** Glue layer that listens to the market bus and runs strategies.
+
+Key pieces:
+
+- `OptionsStrategyRunner`: subscribes to `CandleCloseEvent` and calls each strategy.
+- EMA cache: reads the latest EMA snapshot once per candle for all strategies.
+- Auto-discovery: loads `build_strategy()` from `strategies/options/*.py`.
+
+**Why it exists:**
+Strategies stay pure (no IO). The runner does the IO and order handling once.
+
+---
+
 ## 4) Key interfaces (what plugs into what)
 
 ### Quote Provider Interface
@@ -317,6 +346,22 @@ for update in updates:
     print(update.position_id, update.mark_price, update.unrealized_pnl)
 ```
 
+### Pattern F: Event-driven strategies
+
+```bash
+bus = MarketEventBus()
+runner = OptionsStrategyRunner(bus, order_manager, strategies, expiration="20260106")
+runner.start()
+
+await bus.publish_candle_close(CandleCloseEvent(
+    symbol="SPY",
+    timeframe="15M",
+    candle={"close": 500.0},
+    closed_at=datetime.utcnow(),
+    source="test",
+))
+```
+
 ---
 
 ## 6) How to test quickly
@@ -331,6 +376,12 @@ python -m pytest tests/options_unit_tests
 
 ```bash
 python -m pytest tests/options_integration_tests/test_order_flow.py
+```
+
+### Integration test (strategy runner + market bus)
+
+```bash
+python -m pytest tests/options_integration_tests/test_strategy_runner_flow.py
 ```
 
 ### Live hub smoke test

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Awaitable, Any
+from typing import Awaitable, Any, Callable, Optional
 from utils.timezone import NY_TZ
 
 @dataclass
@@ -22,3 +22,4 @@ class PipelineSinks:
     update_ema: Callable[[dict, str], Awaitable[None]]
     refresh_chart: Callable[[str, str], Awaitable[None]]
     on_error: Callable[[Exception, str, str], Awaitable[None]]
+    on_candle_close: Optional[Callable[[Any], Awaitable[None]]] = None

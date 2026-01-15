@@ -145,7 +145,11 @@ StratForge/
 │   └── week_performances.json
 ├── strategies/
 │   ├── __pycache__/
-│   └── trading_strategy.py
+│   ├── __init__.py
+│   └── options/
+│       ├── __init__.py
+│       ├── ema_crossover.py
+│       └── types.py
 ├── tests/
 │   ├── __pycache__/
 │   ├── options_integration_tests/

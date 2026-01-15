@@ -9,10 +9,17 @@ from tools.audit_candles import audit_dayfile
 from economic_calender_scraper import ensure_economic_calendar_data, setup_economic_news_message
 from integrations.discord.client import bot, print_discord, send_file_discord, calculate_day_performance
 from error_handler import error_log_and_discord_message
+from options.execution_paper import PaperOrderExecutor
+from options.order_manager import OptionsOrderManager
+from options.quote_hub import resolve_expiration
+from options.quote_service import OptionQuoteService, TradierOptionsProvider
+from runtime.market_bus import MarketEventBus
+from runtime.options_strategy_runner import OptionsStrategyRunner, discover_strategies
 from shared_state import print_log
 import asyncio
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Tuple
 from objects import process_end_of_day_15m_candles_for_objects, pull_and_replace_15m
 import cred
 from utils.timezone import NY_TZ
@@ -27,6 +34,99 @@ from indicators.ema_manager import update_ema
 from shared_state import price_lock
 import shared_state
 from web_dash.refresh_client import refresh_chart
+import aiohttp
+import os
+
+
+@dataclass
+class OptionsRuntime:
+    session: aiohttp.ClientSession
+    quote_service: OptionQuoteService
+    runner: OptionsStrategyRunner
+
+    async def stop(self) -> None:
+        self.runner.stop()
+        await self.quote_service.stop()
+        await self.session.close()
+
+
+def _resolve_options_expiration(raw: Optional[str]) -> str:
+    if not raw or str(raw).lower() == "not specified":
+        raw = "0dte"
+    return resolve_expiration(str(raw))
+
+
+def _load_tradier_config() -> Tuple[str, str]:
+    base_url = getattr(cred, "TRADIER_BROKERAGE_BASE_URL", None)
+    token = getattr(cred, "TRADIER_BROKERAGE_ACCOUNT_ACCESS_TOKEN", None)
+    if not base_url or not token:
+        raise RuntimeError("Tradier config missing; set base URL and access token in cred.py")
+    return base_url, token
+
+
+async def start_options_runtime(
+    *,
+    symbol: str,
+    market_bus: MarketEventBus,
+    poll_interval: float = 1.0,
+) -> Optional[OptionsRuntime]:
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        print_log("[OPTIONS] Skipping options runtime under pytest.")
+        return None
+
+    strategies = discover_strategies()
+    if not strategies:
+        print_log("[OPTIONS] No strategies found; skipping options runtime.")
+        return None
+
+    try:
+        expiration = _resolve_options_expiration(read_config("OPTION_EXPIRATION_DTE"))
+        max_otm = read_config("NUM_OUT_OF_MONEY")
+    except Exception as e:
+        print_log(f"[OPTIONS] Config missing for options runtime: {e}")
+        return None
+    order_quantity = 1
+    try:
+        base_url, token = _load_tradier_config()
+    except Exception as e:
+        print_log(f"[OPTIONS] Tradier config unavailable: {e}")
+        return None
+
+    session = aiohttp.ClientSession()
+    try:
+        provider = TradierOptionsProvider(
+            session=session,
+            base_url=base_url,
+            access_token=token,
+            logger=print_log,
+        )
+        quote_service = OptionQuoteService(
+            provider,
+            symbol=symbol,
+            expiration=expiration,
+            poll_interval=poll_interval,
+            logger=print_log,
+        )
+        await quote_service.start()
+
+        executor = PaperOrderExecutor(quote_service.get_quote, logger=print_log)
+        order_manager = OptionsOrderManager(quote_service, executor, logger=print_log)
+        runner = OptionsStrategyRunner(
+            market_bus,
+            order_manager,
+            strategies,
+            expiration=expiration,
+            selector_name="price-range-otm",
+            max_otm=max_otm,
+            order_quantity=order_quantity,
+            logger=print_log,
+        )
+        runner.start()
+        print_log(f"[OPTIONS] Started {len(strategies)} strategy(ies) with expiration={expiration}.")
+        return OptionsRuntime(session=session, quote_service=quote_service, runner=runner)
+    except Exception:
+        await session.close()
+        raise
 
 async def bot_start():
     await bot.start(cred.DISCORD_TOKEN)
@@ -98,6 +198,8 @@ async def main():
 async def main_loop(session_open, session_close):
     queue = asyncio.Queue()
     session_open, session_close = normalize_session_times(session_open, session_close)
+    market_bus = MarketEventBus(logger=print_log)
+    options_runtime: Optional[OptionsRuntime] = None
 
     current_time = datetime.now(NY_TZ)
     market_open_time = session_open
@@ -122,6 +224,13 @@ async def main_loop(session_open, session_close):
     feed_handle = None
     try:
         feed_handle = await start_feed(config.symbol, queue)
+        try:
+            options_runtime = await start_options_runtime(
+                symbol=config.symbol,
+                market_bus=market_bus,
+            )
+        except Exception as e:
+            print_log(f"[OPTIONS] Failed to start options runtime: {e}")
 
         start_of_day_account_balance = await get_account_balance(read_config('REAL_MONEY_ACTIVATED')) if read_config('REAL_MONEY_ACTIVATED') else read_config('START_OF_DAY_BALANCE')
         f_s_account_balance = "{:,.2f}".format(start_of_day_account_balance)
@@ -132,7 +241,13 @@ async def main_loop(session_open, session_close):
         did_run_intraday = True
         
         deps = PipelineDeps(get_session_bounds=get_session_bounds, latest_price_lock=price_lock, shared_state=shared_state)
-        sinks = PipelineSinks(append_candle=append_candle, update_ema=update_ema, refresh_chart=refresh_chart, on_error=error_log_and_discord_message)
+        sinks = PipelineSinks(
+            append_candle=append_candle,
+            update_ema=update_ema,
+            refresh_chart=refresh_chart,
+            on_error=error_log_and_discord_message,
+            on_candle_close=market_bus.publish_candle_close,
+        )
 
         task = asyncio.create_task(run_pipeline(queue, config, deps, sinks), name="DataPipeline")
         await task
@@ -141,6 +256,8 @@ async def main_loop(session_open, session_close):
         await error_log_and_discord_message(e, "main", "main_loop")
 
     finally:
+        if options_runtime:
+            await options_runtime.stop()
         if feed_handle:
             await stop_feed(feed_handle)
         await asyncio.sleep(10)

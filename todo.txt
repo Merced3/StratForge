@@ -3,7 +3,7 @@ Decoupling, I want to make this current system as simple, modular, easy to chang
 So that if I do want to make changes and update those changes, as its running - to other system's the other systems don't fail.
 
 NEXT THING TO WORK ON:
-[x] Fix healing error/warning message. *maybe, we will see with tomorrows run*
+[x] Fix healing error/warning message.
 [x] work on Central option contract system.
     [x] get central hub working
     [x] get buying/selling working
@@ -17,8 +17,14 @@ NEXT THING TO WORK ON:
     [x] ema crossover
     [ ] candle ema break
     [ ] object break (zone/level)
-[-] hard EOD exit: close all open positions 1 minute before market close
+[x] hard EOD exit: close all open positions 1 minute before market close
+    [x] Add `close_all_positions()` to `OptionsOrderManager`
+    [x] Call it from `main_loop()` using `session_close - timedelta(minutes=1)`
 [-] discord messaging + chart markers on open/trim/close (decoupled hooks)
+    [ ] Recommended Approach, Add optional callbacks on OptionsStrategyRunner like:
+        [ ] on_position_opened(position, reason)
+        [ ] on_position_closed(position, reason)
+        [ ] Then Discord integration can plug into those callbacks without coupling core logic to Discord.
 [x] Discord folder, `integrations/dicsord/`, 
     [x] Make this decoupled from the whole system, easy to change/add too.
     [x] Goal MOVE `print_discord_messages.py` into that folder so the root NOW is clueless on what discord actually does.

@@ -255,6 +255,27 @@ class OptionsOrderManager:
             limit_price=limit_price,
         )
 
+    async def close_all_positions(
+        self,
+        order_type: str = "market",
+        limit_price: Optional[float] = None,
+    ) -> list[PositionActionResult]:
+        results: list[PositionActionResult] = []
+        for position_id, position in list(self._positions.items()):
+            if position.quantity_open <= 0 or position.status == "closed":
+                continue
+            try:
+                result = await self.close_position(
+                    position_id,
+                    order_type=order_type,
+                    limit_price=limit_price,
+                )
+                if result:
+                    results.append(result)
+            except Exception as exc:
+                self._log(f"[ORDER MANAGER] Failed to close {position_id}: {exc}")
+        return results
+
     def get_context(self, order_id: str) -> Optional[OrderContext]:
         return self._orders.get(order_id)
 

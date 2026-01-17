@@ -36,6 +36,7 @@ import shared_state
 from web_dash.refresh_client import refresh_chart
 import aiohttp
 import os
+from contextlib import suppress
 
 
 @dataclass
@@ -43,6 +44,7 @@ class OptionsRuntime:
     session: aiohttp.ClientSession
     quote_service: OptionQuoteService
     runner: OptionsStrategyRunner
+    order_manager: OptionsOrderManager
 
     async def stop(self) -> None:
         self.runner.stop()
@@ -123,10 +125,31 @@ async def start_options_runtime(
         )
         runner.start()
         print_log(f"[OPTIONS] Started {len(strategies)} strategy(ies) with expiration={expiration}.")
-        return OptionsRuntime(session=session, quote_service=quote_service, runner=runner)
+        return OptionsRuntime(
+            session=session,
+            quote_service=quote_service,
+            runner=runner,
+            order_manager=order_manager,
+        )
     except Exception:
         await session.close()
         raise
+
+
+async def schedule_options_eod_close(
+    order_manager: OptionsOrderManager,
+    market_close: datetime,
+    buffer_minutes: int = 1,
+) -> None:
+    target = market_close - timedelta(minutes=buffer_minutes)
+    now = datetime.now(NY_TZ)
+    if now >= target:
+        print_log("[OPTIONS] EOD close target already reached; closing positions now.")
+        await order_manager.close_all_positions()
+        return
+    print_log(f"[OPTIONS] EOD close scheduled for {target.strftime('%Y-%m-%d %H:%M:%S')}.")
+    await asyncio.sleep((target - now).total_seconds())
+    await order_manager.close_all_positions()
 
 async def bot_start():
     await bot.start(cred.DISCORD_TOKEN)
@@ -200,6 +223,7 @@ async def main_loop(session_open, session_close):
     session_open, session_close = normalize_session_times(session_open, session_close)
     market_bus = MarketEventBus(logger=print_log)
     options_runtime: Optional[OptionsRuntime] = None
+    options_eod_task: Optional[asyncio.Task] = None
 
     current_time = datetime.now(NY_TZ)
     market_open_time = session_open
@@ -229,6 +253,14 @@ async def main_loop(session_open, session_close):
                 symbol=config.symbol,
                 market_bus=market_bus,
             )
+            if options_runtime:
+                options_eod_task = asyncio.create_task(
+                    schedule_options_eod_close(
+                        options_runtime.order_manager,
+                        session_close,
+                    ),
+                    name="OptionsEODClose",
+                )
         except Exception as e:
             print_log(f"[OPTIONS] Failed to start options runtime: {e}")
 
@@ -256,6 +288,10 @@ async def main_loop(session_open, session_close):
         await error_log_and_discord_message(e, "main", "main_loop")
 
     finally:
+        if options_eod_task:
+            options_eod_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await options_eod_task
         if options_runtime:
             await options_runtime.stop()
         if feed_handle:

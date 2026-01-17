@@ -1,25 +1,26 @@
 # main.py
 from data_acquisition import get_account_balance, start_feed, stop_feed
-from utils.json_utils import read_config, get_correct_message_ids, update_config_value
+from utils.json_utils import get_correct_message_ids, read_config, update_config_value
 from utils.log_utils import clear_temp_logs_and_order_files
 from utils.order_utils import initialize_csv_order_log
 from indicators.ema_manager import hard_reset_ema_state, migrate_ema_state_schema
 from tools.compact_parquet import end_of_day_compaction
 from tools.audit_candles import audit_dayfile
 from economic_calender_scraper import ensure_economic_calendar_data, setup_economic_news_message
-from integrations.discord.client import bot, print_discord, send_file_discord, calculate_day_performance
+from integrations.discord import bot, calculate_day_performance, print_discord, send_file_discord
 from error_handler import error_log_and_discord_message
 from options.execution_paper import PaperOrderExecutor
 from options.order_manager import OptionsOrderManager
 from options.quote_hub import resolve_expiration
 from options.quote_service import OptionQuoteService, TradierOptionsProvider
 from runtime.market_bus import MarketEventBus
+from runtime.options_trade_notifier import OptionsTradeNotifier
 from runtime.options_strategy_runner import OptionsStrategyRunner, discover_strategies
 from shared_state import print_log
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple
 from objects import process_end_of_day_15m_candles_for_objects, pull_and_replace_15m
 import cred
 from utils.timezone import NY_TZ
@@ -45,11 +46,14 @@ class OptionsRuntime:
     quote_service: OptionQuoteService
     runner: OptionsStrategyRunner
     order_manager: OptionsOrderManager
+    on_position_closed: Optional[Callable] = None
 
     async def stop(self) -> None:
         self.runner.stop()
         await self.quote_service.stop()
         await self.session.close()
+
+
 
 
 def _resolve_options_expiration(raw: Optional[str]) -> str:
@@ -113,6 +117,8 @@ async def start_options_runtime(
 
         executor = PaperOrderExecutor(quote_service.get_quote, logger=print_log)
         order_manager = OptionsOrderManager(quote_service, executor, logger=print_log)
+        notifier = OptionsTradeNotifier(order_manager, logger=print_log)
+
         runner = OptionsStrategyRunner(
             market_bus,
             order_manager,
@@ -121,6 +127,10 @@ async def start_options_runtime(
             selector_name="price-range-otm",
             max_otm=max_otm,
             order_quantity=order_quantity,
+            on_position_opened=notifier.on_position_opened,
+            on_position_closed=notifier.on_position_closed,
+            on_position_added=notifier.on_position_added,
+            on_position_trimmed=notifier.on_position_trimmed,
             logger=print_log,
         )
         runner.start()
@@ -130,6 +140,7 @@ async def start_options_runtime(
             quote_service=quote_service,
             runner=runner,
             order_manager=order_manager,
+            on_position_closed=notifier.on_position_closed,
         )
     except Exception:
         await session.close()
@@ -140,16 +151,37 @@ async def schedule_options_eod_close(
     order_manager: OptionsOrderManager,
     market_close: datetime,
     buffer_minutes: int = 1,
+    on_position_closed=None,
 ) -> None:
     target = market_close - timedelta(minutes=buffer_minutes)
     now = datetime.now(NY_TZ)
     if now >= target:
         print_log("[OPTIONS] EOD close target already reached; closing positions now.")
-        await order_manager.close_all_positions()
+        results = await order_manager.close_all_positions()
+        if on_position_closed:
+            for result in results:
+                position = order_manager.get_position(result.position_id)
+                if position:
+                    try:
+                        maybe = on_position_closed(position, result.order_result, "EOD close")
+                        if asyncio.iscoroutine(maybe):
+                            await maybe
+                    except Exception as exc:
+                        print_log(f"[OPTIONS] EOD close notify failed: {exc}")
         return
     print_log(f"[OPTIONS] EOD close scheduled for {target.strftime('%Y-%m-%d %H:%M:%S')}.")
     await asyncio.sleep((target - now).total_seconds())
-    await order_manager.close_all_positions()
+    results = await order_manager.close_all_positions()
+    if on_position_closed:
+        for result in results:
+            position = order_manager.get_position(result.position_id)
+            if position:
+                try:
+                    maybe = on_position_closed(position, result.order_result, "EOD close")
+                    if asyncio.iscoroutine(maybe):
+                        await maybe
+                except Exception as exc:
+                    print_log(f"[OPTIONS] EOD close notify failed: {exc}")
 
 async def bot_start():
     await bot.start(cred.DISCORD_TOKEN)
@@ -258,6 +290,7 @@ async def main_loop(session_open, session_close):
                     schedule_options_eod_close(
                         options_runtime.order_manager,
                         session_close,
+                        on_position_closed=options_runtime.on_position_closed,
                     ),
                     name="OptionsEODClose",
                 )

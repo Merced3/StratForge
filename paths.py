@@ -19,6 +19,8 @@ TERMINAL_LOG = LOGS_DIR / 'terminal_output.log'                         # This i
 STORAGE_DIR = BASE / 'storage'                                          # this holds any sensitive data, most of the stuff below is in this folder.
 DATA_DIR = STORAGE_DIR / 'data'                                         # This is needed, this is where all parquet files are stored.
 MARKERS_DIR = STORAGE_DIR / 'markers'                                   # Per-timeframe marker files for the frontend (e.g., 2M.json/5M.json)
+OPTIONS_STORAGE_DIR = STORAGE_DIR / 'options'                           # Local options-only storage (ledger, snapshots, or other option data).
+OPTIONS_TRADE_LEDGER_PATH = OPTIONS_STORAGE_DIR / 'trade_events.jsonl'  # Append-only ledger for trades.
 
 # Objects folder
 OBJECTS_DIR = STORAGE_DIR / 'objects'                                   # The `storage/objects/` folder contains zones and levels calculated by `objects.py`. We consider Zones and Levels as objects.

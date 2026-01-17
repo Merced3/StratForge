@@ -20,11 +20,17 @@ NEXT THING TO WORK ON:
 [x] hard EOD exit: close all open positions 1 minute before market close
     [x] Add `close_all_positions()` to `OptionsOrderManager`
     [x] Call it from `main_loop()` using `session_close - timedelta(minutes=1)`
-[-] discord messaging + chart markers on open/trim/close (decoupled hooks)
-    [ ] Recommended Approach, Add optional callbacks on OptionsStrategyRunner like:
-        [ ] on_position_opened(position, reason)
-        [ ] on_position_closed(position, reason)
-        [ ] Then Discord integration can plug into those callbacks without coupling core logic to Discord.
+[x] discord messaging + chart markers on open/trim/close (decoupled hooks)
+    [x] Recommended Approach, Add optional callbacks on OptionsStrategyRunner like:
+        [x] on_position_opened(position, reason)
+        [x] on_position_closed(position, reason)
+        [x] on_position_added(position, reason)
+        [x] on_position_trimmed(position, reason)
+        [x] Then Discord integration can plug into those callbacks without coupling core logic to Discord.
+    [x] Extract notifier into `runtime/options_trade_notifier.py`
+    [x] Pass timeframe into hooks for correct chart markers
+[x] Write to the ledger before any Discord call. Use the ledger for analytics later
+    [x] Add append-only JSONL ledger + unit test coverage
 [x] Discord folder, `integrations/dicsord/`, 
     [x] Make this decoupled from the whole system, easy to change/add too.
     [x] Goal MOVE `print_discord_messages.py` into that folder so the root NOW is clueless on what discord actually does.

@@ -29,6 +29,7 @@ from .order_manager import (
     PositionActionResult,
 )
 from .position_watcher import PositionUpdate, PositionWatcher
+from .trade_ledger import TradeEvent, build_trade_event, record_trade_event
 from .quote_service import (
     OptionContract,
     OptionQuote,
@@ -56,6 +57,9 @@ __all__ = [
     "PositionActionResult",
     "PositionUpdate",
     "PositionWatcher",
+    "TradeEvent",
+    "build_trade_event",
+    "record_trade_event",
     "ContractSelector",
     "DEFAULT_SELECTOR_REGISTRY",
     "PriceRangeOtmSelector",

@@ -224,6 +224,22 @@ react without re-polling the provider.
 
 ---
 
+### `options/trade_ledger.py`
+
+**Purpose:** Append-only local trade ledger (source of truth).
+
+Key pieces:
+
+- `TradeEvent`: normalized record for open/add/trim/close events.
+- `build_trade_event(...)`: builds a record from a position + order result.
+- `record_trade_event(...)`: appends JSONL to `storage/options/trade_events.jsonl`.
+
+**Why it exists:**
+Discord is display-only. The ledger is written **before any Discord call** so
+you still have reliable data if Wi-Fi drops or Discord is down.
+
+---
+
 ### `runtime/market_bus.py`
 
 **Purpose:** In-process event bus for candle-close events.
@@ -250,6 +266,22 @@ Key pieces:
 
 **Why it exists:**
 Strategies stay pure (no IO). The runner does the IO and order handling once.
+
+---
+
+### `runtime/options_trade_notifier.py`
+
+**Purpose:** Adapter for Discord + chart markers + trade ledger.
+
+Key pieces:
+
+- Writes to the trade ledger before any Discord calls.
+- Sends one Discord message per position and edits it for add/trim/close.
+- Emits chart markers using the strategy's timeframe (defaults to `2M`).
+- Rehydrates message state from `storage/message_ids.json` if memory is missing.
+
+**Why it exists:**
+Keeps `main.py` small and keeps Discord concerns out of core logic.
 
 ---
 
@@ -286,6 +318,20 @@ OptionOrderRequest(
 ```
 
 Paper and Tradier share the same request structure.
+
+---
+
+### Strategy Runner Hooks
+
+```bash
+on_position_opened(position, order_result, reason, timeframe)
+on_position_added(position, order_result, reason, timeframe)
+on_position_trimmed(position, order_result, reason, timeframe)
+on_position_closed(position, order_result, reason, timeframe)
+```
+
+Hooks accept an optional timeframe so marker files can be written to the
+correct chart (2M/5M/15M).
 
 ---
 
@@ -362,6 +408,17 @@ await bus.publish_candle_close(CandleCloseEvent(
 ))
 ```
 
+### Pattern G: Trade ledger events
+
+Every open/add/trim/close writes a line to:
+
+```bash
+storage/options/trade_events.jsonl
+```
+
+Each line is JSON (append-only) so analytics can be built later without
+relying on Discord or in-memory state.
+
 ---
 
 ## 6) How to test quickly
@@ -425,6 +482,7 @@ Each line is a JSON list of quote dicts:
 - **Pluggable:** providers and selectors can be swapped.
 - **Simple defaults:** a single selector and a simple paper executor.
 - **Low API usage:** one chain poll feeds all consumers.
+- **Discord is display-only:** ledger is the source of truth.
 
 ---
 
@@ -448,12 +506,13 @@ Implement `fetch_quotes()` and pass it into `OptionQuoteService`.
 
 - Paper execution does not model latency, slippage, or partial fills.
 - Quote cache is single-symbol, single-expiration per service instance.
-- Order manager and watcher are not wired into runtime/strategies yet.
+- Trade ledger is not yet summarized into daily analytics (JSONL only).
+- Position watcher is not wired into runtime yet.
 
 ---
 
 ## 10) Next steps (optional)
 
-- Add an order manager that consumes cached quotes and manages multiple open orders.
-- Add a mock provider for offline testing.
+- Add daily analytics from `storage/options/trade_events.jsonl`.
+- Wire `PositionWatcher` into runtime for live P&L streaming.
 - Add selection strategies for tighter spreads or IV filters.

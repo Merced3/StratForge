@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import importlib
+import inspect
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Optional
 
-from options.order_manager import OptionsOrderManager
+from options.order_manager import OptionsOrderManager, Position, PositionActionResult
+from options.execution_tradier import OrderSubmitResult
 from options.selection import DEFAULT_PRICE_RANGES, SelectionRequest
 from paths import get_ema_path
 from runtime.market_bus import CandleCloseEvent, MarketEventBus
@@ -52,6 +54,10 @@ class OptionsStrategyRunner:
         max_otm: Optional[float] = None,
         price_ranges=DEFAULT_PRICE_RANGES,
         order_quantity: int = 1,
+        on_position_opened: Optional[Callable[[Position, Optional[OrderSubmitResult], str, Optional[str]], object]] = None,
+        on_position_closed: Optional[Callable[[Position, Optional[OrderSubmitResult], str, Optional[str]], object]] = None,
+        on_position_added: Optional[Callable[[Position, Optional[OrderSubmitResult], str, Optional[str]], object]] = None,
+        on_position_trimmed: Optional[Callable[[Position, Optional[OrderSubmitResult], str, Optional[str]], object]] = None,
         logger: Optional[Callable[[str], None]] = None,
     ) -> None:
         self._bus = bus
@@ -62,6 +68,10 @@ class OptionsStrategyRunner:
         self._max_otm = max_otm
         self._price_ranges = price_ranges
         self._order_quantity = order_quantity
+        self._on_position_opened = on_position_opened
+        self._on_position_closed = on_position_closed
+        self._on_position_added = on_position_added
+        self._on_position_trimmed = on_position_trimmed
         self._logger = logger
         self._listener_id: Optional[int] = None
         self._positions: Dict[str, StrategyPosition] = {}
@@ -111,7 +121,16 @@ class OptionsStrategyRunner:
             return
 
         if active:
-            await self._order_manager.close_position(active.position_id)
+            close_result = await self._order_manager.close_position(active.position_id)
+            closed_position = self._order_manager.get_position(active.position_id)
+            if closed_position:
+                self._dispatch_hook(
+                    self._on_position_closed,
+                    closed_position,
+                    close_result.order_result if close_result else None,
+                    f"flip to {direction}: {signal.reason}",
+                    context.timeframe,
+                )
             self._positions.pop(name, None)
 
         underlying = context.candle.get("close")
@@ -140,11 +159,100 @@ class OptionsStrategyRunner:
             position_id=result.position_id,
             direction=direction,
         )
+        opened_position = self._order_manager.get_position(result.position_id)
+        if opened_position:
+            self._dispatch_hook(
+                self._on_position_opened,
+                opened_position,
+                result.order_result,
+                signal.reason,
+                context.timeframe,
+            )
         self._log(f"[STRATEGY] {name} opened {direction} position {result.position_id} ({signal.reason})")
 
     def _log(self, message: str) -> None:
         if self._logger:
             self._logger(message)
+
+    def _dispatch_hook(
+        self,
+        hook: Optional[Callable[[Position, Optional[OrderSubmitResult], str, Optional[str]], object]],
+        position: Position,
+        order_result: Optional[OrderSubmitResult],
+        reason: str,
+        timeframe: Optional[str] = None,
+    ) -> None:
+        if hook is None:
+            return
+        try:
+            if _hook_accepts_timeframe(hook):
+                result = hook(position, order_result, reason, timeframe)
+            else:
+                result = hook(position, order_result, reason)
+            if inspect.isawaitable(result):
+                asyncio.create_task(self._run_hook(result))
+        except Exception as exc:
+            self._log(f"[STRATEGY] Hook error: {exc}")
+
+    async def _run_hook(self, coro) -> None:
+        try:
+            await coro
+        except Exception as exc:
+            self._log(f"[STRATEGY] Hook async error: {exc}")
+
+    async def add_to_position(
+        self,
+        position_id: str,
+        quantity: int,
+        *,
+        order_type: str = "market",
+        limit_price: Optional[float] = None,
+        reason: str = "add",
+        timeframe: Optional[str] = None,
+    ) -> Optional[PositionActionResult]:
+        result = await self._order_manager.add_to_position(
+            position_id,
+            quantity=quantity,
+            order_type=order_type,
+            limit_price=limit_price,
+        )
+        position = self._order_manager.get_position(position_id)
+        if position:
+            self._dispatch_hook(
+                self._on_position_added,
+                position,
+                result.order_result,
+                reason,
+                timeframe,
+            )
+        return result
+
+    async def trim_position(
+        self,
+        position_id: str,
+        quantity: int,
+        *,
+        order_type: str = "market",
+        limit_price: Optional[float] = None,
+        reason: str = "trim",
+        timeframe: Optional[str] = None,
+    ) -> Optional[PositionActionResult]:
+        result = await self._order_manager.trim_position(
+            position_id,
+            quantity=quantity,
+            order_type=order_type,
+            limit_price=limit_price,
+        )
+        position = self._order_manager.get_position(position_id)
+        if position:
+            self._dispatch_hook(
+                self._on_position_trimmed,
+                position,
+                result.order_result,
+                reason,
+                timeframe,
+            )
+        return result
 
 
 def _call_strategy(strategy: object, context: StrategyContext) -> Optional[StrategySignal]:
@@ -152,6 +260,22 @@ def _call_strategy(strategy: object, context: StrategyContext) -> Optional[Strat
     if handler is None:
         return None
     return handler(context)
+
+
+def _hook_accepts_timeframe(hook: Callable) -> bool:
+    try:
+        signature = inspect.signature(hook)
+    except (TypeError, ValueError):
+        return True
+    params = list(signature.parameters.values())
+    if any(param.kind == inspect.Parameter.VAR_POSITIONAL for param in params):
+        return True
+    positional = [
+        param
+        for param in params
+        if param.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+    ]
+    return len(positional) >= 4
 
 
 def discover_strategies(root: Optional[Path] = None) -> List[object]:

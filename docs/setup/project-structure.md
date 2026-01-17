@@ -91,7 +91,8 @@ StratForge/
 │   ├── position_watcher.py
 │   ├── quote_hub.py
 │   ├── quote_service.py
-│   └── selection.py
+│   ├── selection.py
+│   └── trade_ledger.py
 ├── pipeline/
 │   ├── __pycache__/
 │   ├── __init__.py
@@ -100,6 +101,9 @@ StratForge/
 │   └── state.py
 ├── runtime/
 │   ├── __pycache__/
+│   ├── market_bus.py
+│   ├── options_strategy_runner.py
+│   ├── options_trade_notifier.py
 │   └── pipeline_config_loader.py
 ├── states/
 ├── storage/
@@ -145,17 +149,22 @@ StratForge/
 │   └── week_performances.json
 ├── strategies/
 │   ├── __pycache__/
-│   ├── __init__.py
-│   └── options/
-│       ├── __init__.py
-│       ├── ema_crossover.py
-│       └── types.py
+│   ├── options/
+│   │   ├── __pycache__/
+│   │   ├── __init__.py
+│   │   ├── ema_crossover.py
+│   │   └── types.py
+│   └── __init__.py
 ├── tests/
 │   ├── __pycache__/
+│   ├── integrations/
+│   │   ├── __pycache__/
+│   │   └── test_discord_templates.py
 │   ├── options_integration_tests/
 │   │   ├── __pycache__/
 │   │   ├── conftest.py
-│   │   └── test_order_flow.py
+│   │   ├── test_order_flow.py
+│   │   └── test_strategy_runner_flow.py
 │   ├── options_unit_tests/
 │   │   ├── __pycache__/
 │   │   ├── conftest.py
@@ -165,7 +174,8 @@ StratForge/
 │   │   ├── test_position_watcher.py
 │   │   ├── test_quote_hub.py
 │   │   ├── test_quote_service.py
-│   │   └── test_selection.py
+│   │   ├── test_selection.py
+│   │   └── test_trade_ledger.py
 │   ├── order_handling/
 │   │   └── frontend_markers/
 │   │       ├── __pycache__/

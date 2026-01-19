@@ -451,6 +451,20 @@ storage/options/trade_events.jsonl
 Each line is JSON (append-only) so analytics can be built later without
 relying on Discord or in-memory state.
 
+### Pattern H: Auto-record quotes during live runs
+
+Enable recording in `config.json` to capture the live chain without running a
+second quote hub:
+
+```bash
+RECORD_OPTIONS_QUOTES = true
+OPTIONS_QUOTES_DIR = "storage/options/quotes"
+```
+
+When enabled, `main.py` wraps the provider with `RecordingOptionsProvider` and
+appends snapshots to `storage/options/quotes/YYYY-MM-DD.jsonl`. Files can be
+large; enable it only on days you want to replay.
+
 ---
 
 ## 6) How to test quickly

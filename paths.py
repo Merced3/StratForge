@@ -21,6 +21,7 @@ DATA_DIR = STORAGE_DIR / 'data'                                         # This i
 MARKERS_DIR = STORAGE_DIR / 'markers'                                   # Per-timeframe marker files for the frontend (e.g., 2M.json/5M.json)
 OPTIONS_STORAGE_DIR = STORAGE_DIR / 'options'                           # Local options-only storage (ledger, snapshots, or other option data).
 OPTIONS_TRADE_LEDGER_PATH = OPTIONS_STORAGE_DIR / 'trade_events.jsonl'  # Append-only ledger for trades.
+OPTIONS_QUOTES_DIR = OPTIONS_STORAGE_DIR / 'quotes'                     # Optional quote recordings (JSONL) by trading day.
 
 # Objects folder
 OBJECTS_DIR = STORAGE_DIR / 'objects'                                   # The `storage/objects/` folder contains zones and levels calculated by `objects.py`. We consider Zones and Levels as objects.

@@ -18,6 +18,12 @@ NEXT THING TO WORK ON:
     [x] ema crossover
     [ ] candle ema break
     [ ] object break (zone/level)
+[x] Record option quotes automatically when running:
+    [x] Add config toggle (e.g., RECORD_OPTIONS_QUOTES) and output dir
+    [x] Wrap provider with RecordingOptionsProvider in options runtime when enabled
+    [x] Name output by trading day (e.g., storage/options/quotes/YYYY-MM-DD.jsonl)
+    [x] Ensure recording stops at EOD and does not spawn extra polling
+    [x] Add a small doc note about file size + when to enable
 [x] hard EOD exit: close all open positions 1 minute before market close
     [x] Add `close_all_positions()` to `OptionsOrderManager`
     [x] Call it from `main_loop()` using `session_close - timedelta(minutes=1)`

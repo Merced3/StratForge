@@ -121,10 +121,17 @@ class RecordingOptionsProvider(OptionsProvider):
         self._output_path = output_path
         self._logger = logger
         self._output_path.parent.mkdir(parents=True, exist_ok=True)
+        self._write_failures = 0
 
     async def fetch_quotes(self, symbol: str, expiration: str) -> List[OptionQuote]:
         quotes = await self._provider.fetch_quotes(symbol, expiration)
-        _append_snapshot(self._output_path, quotes)
+        try:
+            _append_snapshot(self._output_path, quotes)
+            self._write_failures = 0
+        except Exception as exc:
+            self._write_failures += 1
+            if self._logger:
+                self._logger(f"[OPTIONS] Quote record write failed ({self._write_failures}): {exc}")
         return quotes
 
 

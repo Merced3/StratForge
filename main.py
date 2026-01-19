@@ -10,6 +10,7 @@ from economic_calender_scraper import ensure_economic_calendar_data, setup_econo
 from integrations.discord import bot, calculate_day_performance, print_discord, send_file_discord
 from error_handler import error_log_and_discord_message
 from options.execution_paper import PaperOrderExecutor
+from options.mock_provider import RecordingOptionsProvider
 from options.order_manager import OptionsOrderManager
 from options.position_watcher import PositionWatcher
 from options.quote_hub import resolve_expiration
@@ -22,10 +23,20 @@ import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Callable, Optional, Tuple
+from pathlib import Path
 from objects import process_end_of_day_15m_candles_for_objects, pull_and_replace_15m
 import cred
 from utils.timezone import NY_TZ
-from paths import TERMINAL_LOG, SPY_15M_ZONE_CHART_PATH, SPY_2M_CHART_PATH, SPY_5M_CHART_PATH, SPY_15M_CHART_PATH, DATA_DIR, get_ema_path
+from paths import (
+    DATA_DIR,
+    OPTIONS_QUOTES_DIR,
+    SPY_15M_ZONE_CHART_PATH,
+    SPY_2M_CHART_PATH,
+    SPY_5M_CHART_PATH,
+    SPY_15M_CHART_PATH,
+    TERMINAL_LOG,
+    get_ema_path,
+)
 import subprocess
 from pipeline.data_pipeline import run_pipeline
 from pipeline.config import PipelineConfig, PipelineDeps, PipelineSinks
@@ -79,6 +90,7 @@ async def start_options_runtime(
     symbol: str,
     market_bus: MarketEventBus,
     poll_interval: float = 1.0,
+    trading_day: Optional[str] = None,
 ) -> Optional[OptionsRuntime]:
     if os.getenv("PYTEST_CURRENT_TEST"):
         print_log("[OPTIONS] Skipping options runtime under pytest.")
@@ -110,6 +122,13 @@ async def start_options_runtime(
             access_token=token,
             logger=print_log,
         )
+        record_quotes = bool(read_config("RECORD_OPTIONS_QUOTES"))
+        if record_quotes:
+            record_dir = read_config("OPTIONS_QUOTES_DIR")
+            output_dir = Path(record_dir) if record_dir else OPTIONS_QUOTES_DIR
+            day = trading_day or datetime.now(NY_TZ).strftime("%Y-%m-%d")
+            output_path = output_dir / f"{day}.jsonl"
+            provider = RecordingOptionsProvider(provider, output_path, logger=print_log)
         quote_service = OptionQuoteService(
             provider,
             symbol=symbol,
@@ -297,6 +316,7 @@ async def main_loop(session_open, session_close):
             options_runtime = await start_options_runtime(
                 symbol=config.symbol,
                 market_bus=market_bus,
+                trading_day=trading_day_str,
             )
             if options_runtime:
                 options_eod_task = asyncio.create_task(

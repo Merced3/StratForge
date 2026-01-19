@@ -20,13 +20,15 @@ StratForge/
 ├── docs/
 │   ├── adr/
 │   │   ├── 0001-separate-frontend-from-backend.md
-│   │   └── 0002-parquet-append-and-duckdb-reads.md
+│   │   ├── 0002-parquet-append-and-duckdb-reads.md
+│   │   └── 0003-decouple-data-pipeline-from-orchestrator.md
 │   ├── api/
 │   │   ├── storage-viewport.md
 │   │   └── ws_server.md
 │   ├── architecture/
 │   │   ├── engine-overview.md
 │   │   ├── frontend-overview.md
+│   │   ├── options-subsystem.md
 │   │   ├── orders-and-tracking.md
 │   │   └── overview.md
 │   ├── configuration/
@@ -44,9 +46,11 @@ StratForge/
 │   │   └── stratforge.md
 │   ├── runbooks/
 │   │   ├── dashboard-stack.md
+│   │   ├── data-pipeline.md
 │   │   ├── end-of-day-compaction.md
 │   │   ├── frontend-reload.md
-│   │   └── rebuild-ema-state.md
+│   │   ├── rebuild-ema-state.md
+│   │   └── release-guardrails.md
 │   ├── setup/
 │   │   └── project-structure.md
 │   ├── strategies/
@@ -60,8 +64,47 @@ StratForge/
 │   ├── __pycache__/
 │   ├── ema_manager.py
 │   └── flag_manager.py
+├── integrations/
+│   ├── __pycache__/
+│   ├── discord/
+│   │   ├── __pycache__/
+│   │   ├── README.md
+│   │   ├── __init__.py
+│   │   ├── client.py
+│   │   └── templates.py
+│   └── __init__.py
+├── legacy/
+│   └── options_v1/
+│       ├── README.md
+│       ├── buy_option.py
+│       ├── order_handler.py
+│       └── submit_order.py
 ├── logs/
 │   └── terminal_output.log
+├── options/
+│   ├── __pycache__/
+│   ├── __init__.py
+│   ├── execution_paper.py
+│   ├── execution_tradier.py
+│   ├── mock_provider.py
+│   ├── order_manager.py
+│   ├── position_watcher.py
+│   ├── quote_hub.py
+│   ├── quote_service.py
+│   ├── selection.py
+│   └── trade_ledger.py
+├── pipeline/
+│   ├── __pycache__/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── data_pipeline.py
+│   └── state.py
+├── runtime/
+│   ├── __pycache__/
+│   ├── market_bus.py
+│   ├── options_strategy_runner.py
+│   ├── options_trade_notifier.py
+│   └── pipeline_config_loader.py
 ├── states/
 ├── storage/
 │   ├── __pycache__/
@@ -106,9 +149,37 @@ StratForge/
 │   └── week_performances.json
 ├── strategies/
 │   ├── __pycache__/
-│   └── trading_strategy.py
+│   ├── options/
+│   │   ├── __pycache__/
+│   │   ├── __init__.py
+│   │   ├── ema_crossover.py
+│   │   ├── exit_rules.py
+│   │   └── types.py
+│   └── __init__.py
 ├── tests/
 │   ├── __pycache__/
+│   ├── integrations/
+│   │   ├── __pycache__/
+│   │   └── test_discord_templates.py
+│   ├── options_integration_tests/
+│   │   ├── __pycache__/
+│   │   ├── conftest.py
+│   │   ├── test_order_flow.py
+│   │   ├── test_position_watcher_flow.py
+│   │   └── test_strategy_runner_flow.py
+│   ├── options_unit_tests/
+│   │   ├── __pycache__/
+│   │   ├── conftest.py
+│   │   ├── test_execution_paper.py
+│   │   ├── test_execution_tradier.py
+│   │   ├── test_exit_rules.py
+│   │   ├── test_order_manager.py
+│   │   ├── test_position_actions.py
+│   │   ├── test_position_watcher.py
+│   │   ├── test_quote_hub.py
+│   │   ├── test_quote_service.py
+│   │   ├── test_selection.py
+│   │   └── test_trade_ledger.py
 │   ├── order_handling/
 │   │   └── frontend_markers/
 │   │       ├── __pycache__/
@@ -116,8 +187,8 @@ StratForge/
 │   ├── runtime/
 │   │   ├── __pycache__/
 │   │   ├── conftest.py
+│   │   ├── test_data_pipeline.py
 │   │   ├── test_main_loop.py
-│   │   ├── test_process_data.py
 │   │   ├── test_time_helpers.py
 │   │   ├── test_wait_until_open.py
 │   │   └── test_ws_auto_connect.py
@@ -140,7 +211,6 @@ StratForge/
 │   ├── csv_to_parquet_days.py
 │   ├── generate_structure.py
 │   ├── normalize_ts_all.py
-│   ├── plot_candles.py
 │   └── repair_candles.py
 ├── utils/
 │   ├── __pycache__/
@@ -150,7 +220,8 @@ StratForge/
 │   ├── json_utils.py
 │   ├── log_utils.py
 │   ├── order_utils.py
-│   └── time_utils.py
+│   ├── time_utils.py
+│   └── timezone.py
 ├── venv/
 ├── web_dash/
 │   ├── __pycache__/
@@ -167,10 +238,10 @@ StratForge/
 │   ├── __init__.py
 │   ├── chart_updater.py
 │   ├── dash_app.py
+│   ├── refresh_client.py
 │   └── ws_server.py
 ├── .gitignore
 ├── README.md
-├── buy_option.py
 ├── config.json
 ├── cred-example.py
 ├── cred.py
@@ -179,13 +250,10 @@ StratForge/
 ├── error_handler.py
 ├── main.py
 ├── objects.py
-├── order_handler.py
 ├── paths.py
-├── print_discord_messages.py
 ├── requirements.txt
-├── rule_manager.py
+├── session.py
 ├── shared_state.py
-├── submit_order.py
 └── todo.txt
 ```
 

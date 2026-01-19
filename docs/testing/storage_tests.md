@@ -19,4 +19,6 @@
 ## Other tests
 
 - `tests/order_handling/frontend_markers/test_add_markers_creates_tf_file.py`: marker writes create per-timeframe JSON files.
+- **Options unit tests**: `tests/options_unit_tests/` (quote hub, cache, selection, paper/Tradier executors, order manager).
+- **Options integration test**: `tests/options_integration_tests/test_order_flow.py` (synthetic provider + real hub loop).
 - See `tests/purpose.md` for broader coverage notes.

@@ -2,7 +2,7 @@
 import cred
 from datetime import datetime
 import requests
-from print_discord_messages import print_discord, get_message_content, edit_discord_message
+#from integrations.discord.client import print_discord, get_message_content, edit_discord_message
 import aiohttp
 from data_acquisition import read_config, get_current_price # this if for shared state get price, more efficient
 from error_handler import error_log_and_discord_message
@@ -118,7 +118,7 @@ async def submit_option_order(strategy_name, symbol, strike, option_type, bid, e
         if response.status_code == 200:
             response_data = response.json()
             if 'order' in response_data:
-                await print_discord("    Order Submitted", f"{symbol} Buy Order Pending" if side=="buy_to_open" else "Sell Order Pending")
+                #await print_discord("    Order Submitted", f"{symbol} Buy Order Pending" if side=="buy_to_open" else "Sell Order Pending")
                 result = {'order_id': response_data['order']['id']}
                 if bid and bid != 'not specified':
                     result['total_value'] = float(bid) * quantity * 100
@@ -133,18 +133,18 @@ async def submit_option_order(strategy_name, symbol, strike, option_type, bid, e
                 if 'cash' in json_response['balances']:
                     account_buying_power = json_response['balances']['cash']['cash_available']
                     order_cost = float(bid) * quantity * 100 if bid and bid != 'not specified' else 0
-                    await print_discord(f"\nOrder submission failed. Settled Funds too low: ${account_buying_power}. Order Cost: ${order_cost}")
-                else:
-                    await print_discord(f"\nOrder submission failed. Settled Funds not available. Account Response content: {response.content}")
-            else:
-                await print_discord(f"\nOrder submission failed. Response content: {response.content}")
+                    #await print_discord(f"\nOrder submission failed. Settled Funds too low: ${account_buying_power}. Order Cost: ${order_cost}")
+                #else:
+                    #await print_discord(f"\nOrder submission failed. Settled Funds not available. Account Response content: {response.content}")
+            #else:
+                #await print_discord(f"\nOrder submission failed. Response content: {response.content}")
         else:
             if response.status_code == 500:
                 error_message = "500 errors typically mean that something isn't working properly with Tradier API. Please let us know by emailing techsupport@tradier.com."
             else:
                 error_message = f"Order failed, response content: {response.content}"
 
-            await print_discord(f"\nOrder submission failed. Response status code: {response.status_code}", error_message)
+            #await print_discord(f"\nOrder submission failed. Response status code: {response.status_code}", error_message)
             return None
     else: # Custom Paper Trading Setup
         option_chain_url = f"{cred.TRADIER_BROKERAGE_BASE_URL}markets/options/chains?symbol={symbol}&expiration={expiration_date}"
@@ -184,8 +184,8 @@ async def submit_option_order(strategy_name, symbol, strike, option_type, bid, e
                 unique_order_ID = f"{symbol}-{option_type}-{strike}-{expiration_date}-{timestamp}"
                 total_investment = (ask * 100) * quantity
                 _message_ = f"**{strategy_name}**\n-----\n**Ticker Symbol:** {symbol}\n**Strike Price:** {strike}\n**Option Type:** {option_type}\n**Quantity:** {quantity} contracts\n**Price:** ${ask:.2f}\n**Total Investment:** ${total_investment:.2f}\n-----"
-                message_obj = await print_discord(_message_)
-                message_ids_dict[unique_order_ID] = message_obj.id # Save message ID for this specific order
+                #message_obj = await print_discord(_message_)
+                #message_ids_dict[unique_order_ID] = message_obj.id # Save message ID for this specific order
                 save_message_ids(unique_order_ID, message_ids_dict[unique_order_ID])
                 
                 active_order = build_active_order(
@@ -238,9 +238,9 @@ async def get_order_status(strategy_name, real_money_activated, order_id, b_s, t
                         #await sell_button_generation(ticker_symbol, order_quantity, cp, strike, expiration_date, order_timestamp)
                         _message_ = f"**{strategy_name}**\n-----\n**Ticker Symbol:** {ticker_symbol}\n**Strike Price:** {strike}\n**Option Type:** {cp}\n**Quantity:** {order_quantity} contracts\n**Price:** ${order_price:.2f}\n**Total Investment:** ${total_investment:.2f}\n-----"
                         
-                        message_obj = await print_discord(_message_, delete_last_message=True)
-                        message_ids_dict[unique_order_key] = message_obj.id # Save message ID for this specific order
-                        save_message_ids(unique_order_key, message_ids_dict[unique_order_key])
+                        #message_obj = await print_discord(_message_, delete_last_message=True)
+                        #message_ids_dict[unique_order_key] = message_obj.id # Save message ID for this specific order
+                        #save_message_ids(unique_order_key, message_ids_dict[unique_order_key])
                         #print(f"    Saved Message ID {message_obj.id} for {unique_order_key}. Current dictionary state: {message_ids_dict}") #this dictionary holds all the trades message ID's, those Message ID holds all the info to that specific trade.
                         
                     else: #sell
@@ -249,25 +249,25 @@ async def get_order_status(strategy_name, real_money_activated, order_id, b_s, t
                         
                         if unique_order_key in message_ids_dict:
                             original_msg_id = message_ids_dict[unique_order_key]
-                            try:
-                                original_content = await get_message_content(original_msg_id)
-                                if original_content:
-                                    updated_content = original_content + "\n" + _message_
-                                    #update discord order message
-                                    await edit_discord_message(original_msg_id, updated_content, True)
-                                else:
-                                    print_log(f"Could not retrieve original message content for ID {original_msg_id}")
-                            except Exception as e:  # Catch any exception to avoid stopping the loop
-                                await error_log_and_discord_message(e, "submit_order", "get_order_status", "An error occurred while getting or edditing message")
+                            #try:
+                            #    original_content = await get_message_content(original_msg_id)
+                            #    if original_content:
+                            #        updated_content = original_content + "\n" + _message_
+                            #        #update discord order message
+                            #        await edit_discord_message(original_msg_id, updated_content, True)
+                            #    else:
+                            #        print_log(f"Could not retrieve original message content for ID {original_msg_id}")
+                            #except Exception as e:  # Catch any exception to avoid stopping the loop
+                            #    await error_log_and_discord_message(e, "submit_order", "get_order_status", "An error occurred while getting or edditing message")
                         else:
                             print_log(f"Message ID for order {unique_order_key} not found in dictionary. Dictionary contents:\n{message_ids_dict}")
                     return unique_order_key, order_price, order_quantity
                 elif status == 'canceled':
                     print_log("")
-                    await print_discord(f"{ticker_symbol} Order Canceled", delete_last_message=True)
+                    #await print_discord(f"{ticker_symbol} Order Canceled", delete_last_message=True)
                     return status
                 elif status == 'rejected':
                     print_log("")
-                    await print_discord(f"{ticker_symbol} Order Rejected", delete_last_message=True)
+                    #await print_discord(f"{ticker_symbol} Order Rejected", delete_last_message=True)
                     return status
             i += 1

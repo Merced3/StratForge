@@ -9,7 +9,7 @@ async def error_log_and_discord_message(e, script_name, func_name, custom_messag
     error_traceback = traceback.format_exc()
     current_time = datetime.now().isoformat()
 
-    #from print_discord_messages import print_discord 
+    #from integrations.discord.client import print_discord
 
     if "()" in func_name:
         func_name = func_name.replace("()", "")

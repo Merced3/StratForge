@@ -1,24 +1,42 @@
 # main.py
 from data_acquisition import get_account_balance, start_feed, stop_feed
-from utils.json_utils import read_config, get_correct_message_ids, update_config_value
+from utils.json_utils import get_correct_message_ids, read_config, update_config_value
 from utils.log_utils import clear_temp_logs_and_order_files
 from utils.order_utils import initialize_csv_order_log
 from indicators.ema_manager import hard_reset_ema_state, migrate_ema_state_schema
 from tools.compact_parquet import end_of_day_compaction
 from tools.audit_candles import audit_dayfile
-from indicators.flag_manager import clear_all_states
 from economic_calender_scraper import ensure_economic_calendar_data, setup_economic_news_message
-from print_discord_messages import bot, print_discord, send_file_discord, calculate_day_performance
+from integrations.discord import bot, calculate_day_performance, print_discord, send_file_discord
 from error_handler import error_log_and_discord_message
-from order_handler import get_profit_loss_orders_list, reset_profit_loss_orders_list
+from options.execution_paper import PaperOrderExecutor
+from options.mock_provider import RecordingOptionsProvider
+from options.order_manager import OptionsOrderManager
+from options.position_watcher import PositionWatcher
+from options.quote_hub import resolve_expiration
+from options.quote_service import OptionQuoteService, TradierOptionsProvider
+from runtime.market_bus import MarketEventBus
+from runtime.options_trade_notifier import OptionsTradeNotifier
+from runtime.options_strategy_runner import OptionsStrategyRunner, discover_strategies
 from shared_state import print_log
 import asyncio
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Callable, Optional, Tuple
+from pathlib import Path
 from objects import process_end_of_day_15m_candles_for_objects, pull_and_replace_15m
 import cred
 from utils.timezone import NY_TZ
-from paths import TERMINAL_LOG, SPY_15M_ZONE_CHART_PATH, SPY_2M_CHART_PATH, SPY_5M_CHART_PATH, SPY_15M_CHART_PATH, DATA_DIR, get_ema_path
+from paths import (
+    DATA_DIR,
+    OPTIONS_QUOTES_DIR,
+    SPY_15M_ZONE_CHART_PATH,
+    SPY_2M_CHART_PATH,
+    SPY_5M_CHART_PATH,
+    SPY_15M_CHART_PATH,
+    TERMINAL_LOG,
+    get_ema_path,
+)
 import subprocess
 from pipeline.data_pipeline import run_pipeline
 from pipeline.config import PipelineConfig, PipelineDeps, PipelineSinks
@@ -29,6 +47,173 @@ from indicators.ema_manager import update_ema
 from shared_state import price_lock
 import shared_state
 from web_dash.refresh_client import refresh_chart
+import aiohttp
+import os
+from contextlib import suppress
+
+
+@dataclass
+class OptionsRuntime:
+    session: aiohttp.ClientSession
+    quote_service: OptionQuoteService
+    runner: OptionsStrategyRunner
+    order_manager: OptionsOrderManager
+    position_watcher: Optional[PositionWatcher] = None
+    on_position_closed: Optional[Callable] = None
+
+    async def stop(self) -> None:
+        self.runner.stop()
+        if self.position_watcher:
+            await self.position_watcher.stop()
+        await self.quote_service.stop()
+        await self.session.close()
+
+
+
+
+def _resolve_options_expiration(raw: Optional[str]) -> str:
+    if not raw or str(raw).lower() == "not specified":
+        raw = "0dte"
+    return resolve_expiration(str(raw))
+
+
+def _load_tradier_config() -> Tuple[str, str]:
+    base_url = getattr(cred, "TRADIER_BROKERAGE_BASE_URL", None)
+    token = getattr(cred, "TRADIER_BROKERAGE_ACCOUNT_ACCESS_TOKEN", None)
+    if not base_url or not token:
+        raise RuntimeError("Tradier config missing; set base URL and access token in cred.py")
+    return base_url, token
+
+
+async def start_options_runtime(
+    *,
+    symbol: str,
+    market_bus: MarketEventBus,
+    poll_interval: float = 1.0,
+    trading_day: Optional[str] = None,
+) -> Optional[OptionsRuntime]:
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        print_log("[OPTIONS] Skipping options runtime under pytest.")
+        return None
+
+    strategies = discover_strategies()
+    if not strategies:
+        print_log("[OPTIONS] No strategies found; skipping options runtime.")
+        return None
+
+    try:
+        expiration = _resolve_options_expiration(read_config("OPTION_EXPIRATION_DTE"))
+        max_otm = read_config("NUM_OUT_OF_MONEY")
+    except Exception as e:
+        print_log(f"[OPTIONS] Config missing for options runtime: {e}")
+        return None
+    order_quantity = 1
+    try:
+        base_url, token = _load_tradier_config()
+    except Exception as e:
+        print_log(f"[OPTIONS] Tradier config unavailable: {e}")
+        return None
+
+    session = aiohttp.ClientSession()
+    try:
+        provider = TradierOptionsProvider(
+            session=session,
+            base_url=base_url,
+            access_token=token,
+            logger=print_log,
+        )
+        record_quotes = bool(read_config("RECORD_OPTIONS_QUOTES"))
+        if record_quotes:
+            record_dir = read_config("OPTIONS_QUOTES_DIR")
+            output_dir = Path(record_dir) if record_dir else OPTIONS_QUOTES_DIR
+            day = trading_day or datetime.now(NY_TZ).strftime("%Y-%m-%d")
+            output_path = output_dir / f"{day}.jsonl"
+            provider = RecordingOptionsProvider(provider, output_path, logger=print_log)
+        quote_service = OptionQuoteService(
+            provider,
+            symbol=symbol,
+            expiration=expiration,
+            poll_interval=poll_interval,
+            logger=print_log,
+        )
+        await quote_service.start()
+
+        executor = PaperOrderExecutor(quote_service.get_quote, logger=print_log)
+        order_manager = OptionsOrderManager(quote_service, executor, logger=print_log)
+        notifier = OptionsTradeNotifier(order_manager, logger=print_log)
+        position_watcher = PositionWatcher(
+            quote_service,
+            lambda: order_manager.list_positions().values(),
+            refresh_interval=1.0,
+            logger=print_log,
+        )
+        await position_watcher.start()
+
+        runner = OptionsStrategyRunner(
+            market_bus,
+            order_manager,
+            strategies,
+            expiration=expiration,
+            selector_name="price-range-otm",
+            max_otm=max_otm,
+            order_quantity=order_quantity,
+            position_watcher=position_watcher,
+            on_position_opened=notifier.on_position_opened,
+            on_position_closed=notifier.on_position_closed,
+            on_position_added=notifier.on_position_added,
+            on_position_trimmed=notifier.on_position_trimmed,
+            logger=print_log,
+        )
+        runner.start()
+        print_log(f"[OPTIONS] Started {len(strategies)} strategy(ies) with expiration={expiration}.")
+        return OptionsRuntime(
+            session=session,
+            quote_service=quote_service,
+            runner=runner,
+            order_manager=order_manager,
+            position_watcher=position_watcher,
+            on_position_closed=notifier.on_position_closed,
+        )
+    except Exception:
+        await session.close()
+        raise
+
+
+async def schedule_options_eod_close(
+    order_manager: OptionsOrderManager,
+    market_close: datetime,
+    buffer_minutes: int = 1,
+    on_position_closed=None,
+) -> None:
+    target = market_close - timedelta(minutes=buffer_minutes)
+    now = datetime.now(NY_TZ)
+    if now >= target:
+        print_log("[OPTIONS] EOD close target already reached; closing positions now.")
+        results = await order_manager.close_all_positions()
+        if on_position_closed:
+            for result in results:
+                position = order_manager.get_position(result.position_id)
+                if position:
+                    try:
+                        maybe = on_position_closed(position, result.order_result, "EOD close")
+                        if asyncio.iscoroutine(maybe):
+                            await maybe
+                    except Exception as exc:
+                        print_log(f"[OPTIONS] EOD close notify failed: {exc}")
+        return
+    print_log(f"[OPTIONS] EOD close scheduled for {target.strftime('%Y-%m-%d %H:%M:%S')}.")
+    await asyncio.sleep((target - now).total_seconds())
+    results = await order_manager.close_all_positions()
+    if on_position_closed:
+        for result in results:
+            position = order_manager.get_position(result.position_id)
+            if position:
+                try:
+                    maybe = on_position_closed(position, result.order_result, "EOD close")
+                    if asyncio.iscoroutine(maybe):
+                        await maybe
+                except Exception as exc:
+                    print_log(f"[OPTIONS] EOD close notify failed: {exc}")
 
 async def bot_start():
     await bot.start(cred.DISCORD_TOKEN)
@@ -100,6 +285,9 @@ async def main():
 async def main_loop(session_open, session_close):
     queue = asyncio.Queue()
     session_open, session_close = normalize_session_times(session_open, session_close)
+    market_bus = MarketEventBus(logger=print_log)
+    options_runtime: Optional[OptionsRuntime] = None
+    options_eod_task: Optional[asyncio.Task] = None
 
     current_time = datetime.now(NY_TZ)
     market_open_time = session_open
@@ -124,6 +312,23 @@ async def main_loop(session_open, session_close):
     feed_handle = None
     try:
         feed_handle = await start_feed(config.symbol, queue)
+        try:
+            options_runtime = await start_options_runtime(
+                symbol=config.symbol,
+                market_bus=market_bus,
+                trading_day=trading_day_str,
+            )
+            if options_runtime:
+                options_eod_task = asyncio.create_task(
+                    schedule_options_eod_close(
+                        options_runtime.order_manager,
+                        session_close,
+                        on_position_closed=options_runtime.on_position_closed,
+                    ),
+                    name="OptionsEODClose",
+                )
+        except Exception as e:
+            print_log(f"[OPTIONS] Failed to start options runtime: {e}")
 
         start_of_day_account_balance = await get_account_balance(read_config('REAL_MONEY_ACTIVATED')) if read_config('REAL_MONEY_ACTIVATED') else read_config('START_OF_DAY_BALANCE')
         f_s_account_balance = "{:,.2f}".format(start_of_day_account_balance)
@@ -134,7 +339,13 @@ async def main_loop(session_open, session_close):
         did_run_intraday = True
         
         deps = PipelineDeps(get_session_bounds=get_session_bounds, latest_price_lock=price_lock, shared_state=shared_state)
-        sinks = PipelineSinks(append_candle=append_candle, update_ema=update_ema, refresh_chart=refresh_chart, on_error=error_log_and_discord_message)
+        sinks = PipelineSinks(
+            append_candle=append_candle,
+            update_ema=update_ema,
+            refresh_chart=refresh_chart,
+            on_error=error_log_and_discord_message,
+            on_candle_close=market_bus.publish_candle_close,
+        )
 
         task = asyncio.create_task(run_pipeline(queue, config, deps, sinks), name="DataPipeline")
         await task
@@ -143,6 +354,12 @@ async def main_loop(session_open, session_close):
         await error_log_and_discord_message(e, "main", "main_loop")
 
     finally:
+        if options_eod_task:
+            options_eod_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await options_eod_task
+        if options_runtime:
+            await options_runtime.stop()
         if feed_handle:
             await stop_feed(feed_handle)
         await asyncio.sleep(10)
@@ -155,7 +372,7 @@ async def process_end_of_day(trading_day_str: Optional[str] = None):
     # 1. Get balances and calculate P/L
     rma = read_config('REAL_MONEY_ACTIVATED')
     start_of_day_account_balance = await get_account_balance(rma) if rma else read_config('START_OF_DAY_BALANCE')
-    todays_profit_loss = sum(get_profit_loss_orders_list())
+    todays_profit_loss = 0 #sum(get_profit_loss_orders_list())
     end_of_day_account_balance = start_of_day_account_balance + todays_profit_loss
     
     # 2. Announce/report to Discord
@@ -188,9 +405,9 @@ async def process_end_of_day(trading_day_str: Optional[str] = None):
     update_config_value('START_OF_DAY_BALANCE', end_of_day_account_balance)
 
     # 5. Reset all data for next session
-    clear_all_states()
+    #clear_all_states() # from flag manager script
     clear_temp_logs_and_order_files()
-    reset_profit_loss_orders_list()
+    #reset_profit_loss_orders_list()
 
     # 6. Storage compaction (safe to call daily; no-op if nothing to do)
     day = trading_day_str or datetime.now(NY_TZ).strftime("%Y-%m-%d")

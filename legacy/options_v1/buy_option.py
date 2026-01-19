@@ -1,11 +1,11 @@
 # buy_option.py
 from error_handler import error_log_and_discord_message
 from order_handler import get_unique_order_id_and_is_active, manage_active_order
-from submit_order import find_what_to_buy, submit_option_order, get_order_status
+from legacy.options_v1.submit_order import find_what_to_buy, submit_option_order, get_order_status
 from utils.order_utils import get_expiration, calculate_quantity, build_active_order
 from utils.json_utils import read_config
 from data_acquisition import get_account_balance, add_markers
-from print_discord_messages import print_discord
+#from integrations.discord.client import print_discord
 from datetime import datetime
 import asyncio
 
@@ -45,7 +45,7 @@ async def buy_option_cp(real_money_activated, ticker_symbol, cp, TP_value, sessi
         )
         
         if strike_price is None or strike_ask_bid is None:
-            await print_discord(f"**Appropriate strike was not found**\nstrike_price = None, Canceling buy.\n(Since not enough info)")
+            #await print_discord(f"**Appropriate strike was not found**\nstrike_price = None, Canceling buy.\n(Since not enough info)")
             return False, None, None, None, None, "Strike Price Not Found, Canceling Buy."
         
         quantity = calculate_quantity(strike_ask_bid, read_config('ACCOUNT_ORDER_PERCENTAGE'))    
@@ -59,25 +59,25 @@ async def buy_option_cp(real_money_activated, ticker_symbol, cp, TP_value, sessi
         
         f_order_cost = f"{order_cost:,.2f}" # 'f_' means formatted
         f_order_cost_buffer = f"{order_cost_buffer:,.2f}" # formatted
-        
-        if order_cost_buffer >= buying_power:
-            await print_discord(f"""
-**NOT ENOUGH BUYING POWER LEFT**
------
-Canceling Order for Strategy: 
-**{strategy_name}**
------
-**Buying Power:** ${buying_power}
-**Order Cost Buffer:** ${f_order_cost_buffer}
-Order Cost Buffer exceded BP
------
-**Strike Price:** {strike_price}
-**Option Type:** {cp}
-**Quantity:** {quantity} contracts
-**Price:** ${strike_ask_bid}
-**Total Cost:** ${f_order_cost}
-""")
-            return False, None, None, None, None, "Not Enough Buying Power."
+      
+#       if order_cost_buffer >= buying_power:
+#            await print_discord(f"""
+#**NOT ENOUGH BUYING POWER LEFT**
+#-----
+#Canceling Order for Strategy: 
+#**{strategy_name}**
+#-----
+#**Buying Power:** ${buying_power}
+#**Order Cost Buffer:** ${f_order_cost_buffer}
+#Order Cost Buffer exceded BP
+#-----
+#**Strike Price:** {strike_price}
+#**Option Type:** {cp}
+#**Quantity:** {quantity} contracts
+#**Price:** ${strike_ask_bid}
+#**Total Cost:** ${f_order_cost}
+#""")
+#            return False, None, None, None, None, "Not Enough Buying Power."
 
         if real_money_activated: 
             order_result = await submit_option_order(strategy_name, ticker_symbol, strike_price, cp, bid, expiration_date, quantity, side, order_type)
@@ -122,4 +122,3 @@ Order Cost Buffer exceded BP
     except Exception as e:
         await error_log_and_discord_message(e, "buy_option", "buy_option_cp")
         return False, None, None, None, None, f"Error: {e}"
-

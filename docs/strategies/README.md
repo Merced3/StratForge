@@ -29,3 +29,33 @@ class Strategy:
 
 * Storage system: `docs/data/storage-system.md`
 * Viewport API: `docs/api/storage-viewport.md`
+
+## Options exit rules (profit targets)
+
+Reusable profit-target logic lives in `strategies/options/exit_rules.py`. Use it inside any options strategy
+to keep trims/closes consistent and easy to test.
+
+Example:
+
+```python
+from strategies.options.exit_rules import ProfitTargetPlan, ProfitTargetStep
+
+class MyOptionsStrategy:
+    name = "my-strategy"
+
+    def __init__(self, *, timeframe="15M"):
+        self.timeframe = timeframe
+        self.exit_plan = ProfitTargetPlan([
+            ProfitTargetStep(target_pct=100.0, action="trim", fraction=0.5),
+            ProfitTargetStep(target_pct=200.0, action="close"),
+        ])
+
+    def on_position_update(self, updates):
+        return self.exit_plan.evaluate(updates, timeframe=self.timeframe)
+```
+
+Notes:
+
+* `fraction` trims a percent of the open contracts (rounded to at least 1).
+* `quantity` trims a fixed number of contracts.
+* `close` ignores quantity and exits the full position.

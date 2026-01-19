@@ -1,12 +1,59 @@
 Everything I'm focusing is:
 Decoupling, I want to make this current system as simple, modular, easy to change, as possible.
-So that if i do want to make changes and update those changes, as its running - to other system's the other systems don't fail.
+So that if I do want to make changes and update those changes, as its running - to other system's the other systems don't fail.
 
 NEXT THING TO WORK ON:
-[x] Fix healing error/warning message. *maybe, we will see with tomorrows run*
-[ ] work on Central option contract system.
-    [ ] 
-    [ ] 
+[x] Fix healing error/warning message.
+[x] work on Central option contract system.
+    [x] get central hub working
+    [x] get buying/selling working
+        [x] Setup quote Sim-Env. There will be times we need to test when market is not open.
+        [x] setup tests
+        [x] Build Position Order Watcher
+[x] wire position watcher into runtime/strategies OR Higher level Integration Tests.
+    [x] integration test for strategy runner (market bus -> runner -> order manager)
+    [x] wire position watcher into runtime/strategies
+    [x] integration test for position watcher -> strategy updates
+[-] start with 2 or 3 simple strategies: # See if we can handle multiple strategies
+    [x] ema crossover
+    [ ] candle ema break
+    [ ] object break (zone/level)
+[x] Record option quotes automatically when running:
+    [x] Add config toggle (e.g., RECORD_OPTIONS_QUOTES) and output dir
+    [x] Wrap provider with RecordingOptionsProvider in options runtime when enabled
+    [x] Name output by trading day (e.g., storage/options/quotes/YYYY-MM-DD.jsonl)
+    [x] Ensure recording stops at EOD and does not spawn extra polling
+    [x] Add a small doc note about file size + when to enable
+[x] hard EOD exit: close all open positions 1 minute before market close
+    [x] Add `close_all_positions()` to `OptionsOrderManager`
+    [x] Call it from `main_loop()` using `session_close - timedelta(minutes=1)`
+[x] discord messaging + chart markers on open/trim/close (decoupled hooks)
+    [x] Recommended Approach, Add optional callbacks on OptionsStrategyRunner like:
+        [x] on_position_opened(position, reason)
+        [x] on_position_closed(position, reason)
+        [x] on_position_added(position, reason)
+        [x] on_position_trimmed(position, reason)
+        [x] Then Discord integration can plug into those callbacks without coupling core logic to Discord.
+    [x] Extract notifier into `runtime/options_trade_notifier.py`
+    [x] Pass timeframe into hooks for correct chart markers
+[x] Write to the ledger before any Discord call. Use the ledger for analytics later
+    [x] Add append-only JSONL ledger + unit test coverage
+[x] Reusable exit rules for trims/TP in strategies
+    [x] Add `exit_rules.py` helper
+    [x] Add unit + integration tests for trim/close actions
+[x] Discord folder, `integrations/dicsord/`, 
+    [x] Make this decoupled from the whole system, easy to change/add too.
+    [x] Goal MOVE `print_discord_messages.py` into that folder so the root NOW is clueless on what discord actually does.
+    [x] `client.py` → thin wrappers for send/edit/file (can reuse `print_discord_messages.py` under the hood).
+    [x] `templates.py` → all message formats in one place.
+    [x] `__init__.py` makes imports predictable
+        - if thats what we want to do. 
+        - Where we can make this discord folder drag and 
+        drop the `integrations/discord/` folder into other
+        projects with only changing stuff in the `templates.py`
+        file.
+        - Thats not the "goal" but it keeps us to write good code.
+    [x] `README.md` → usage + examples.
 
 Key: 
     [x] = done/working

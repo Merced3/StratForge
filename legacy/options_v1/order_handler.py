@@ -6,8 +6,8 @@ import os
 import json
 from datetime import datetime
 from pathlib import Path
-from print_discord_messages import bot, print_discord, edit_discord_message, get_message_content
-from submit_order import submit_option_order, get_order_status
+#from integrations.discord.client import bot, print_discord, edit_discord_message, get_message_content
+#from submit_order import submit_option_order, get_order_status
 from error_handler import error_log_and_discord_message, print_log
 from data_acquisition import add_markers, get_current_candle_index, get_current_price
 from utils.json_utils import read_config
@@ -172,14 +172,14 @@ async def manage_active_order(active_order_details, _message_ids_dict):
                 if remaining_quantity <= 0:
                     msg_id = message_ids_dict[unique_order_id]
                     calculate_max_drawdown_and_gain(buy_entry_price, lowest_bid_price, highest_bid_price, True, order_log_name, unique_order_id)
-                    content = await get_message_content(msg_id)
-                    if content:
-                        final_msg = content + calculate_profit_percentage(content, unique_order_id)  # Append the trade info to the original message content
-                        await edit_discord_message(msg_id, final_msg, None, Path(__file__).resolve().parent / f"{order_log_name}")
-                        # Verify if the file was sent and then delete the log file
-                        if os.path.exists(order_log_name):
-                            os.remove(order_log_name)
-                            #print_log(f"Order log file {order_log_name} deleted.")
+                    #content = await get_message_content(msg_id)
+                    #if content:
+                    #    final_msg = content + calculate_profit_percentage(content, unique_order_id)  # Append the trade info to the original message content
+                    #    await edit_discord_message(msg_id, final_msg, None, Path(__file__).resolve().parent / f"{order_log_name}")
+                    #    # Verify if the file was sent and then delete the log file
+                    #    if os.path.exists(order_log_name):
+                    #        os.remove(order_log_name)
+                    #        #print_log(f"Order log file {order_log_name} deleted.")
                     all_sells = 0
                     for sells in order_adjustments:
                         sell_cost = (sells["sold_price"] * 100) * sells["quantity"]
@@ -255,12 +255,12 @@ async def check_trim_targets(current_bid_price, sell_points, sell_quantities, or
             
             if unique_order_id in message_ids_dict:
                 msg_id = message_ids_dict[unique_order_id]
-                try:
-                    content = await get_message_content(msg_id)
-                    if content:
-                        await edit_discord_message(msg_id, content + "\n" + update_dsc_msg)
-                except Exception as e:  # Catch any exception to avoid stopping the loop
-                    await error_log_and_discord_message(e, "order_handler", "manage_active_fake_order", "An error occurred while getting or edditing message")
+                #try:
+                #    content = await get_message_content(msg_id)
+                #    if content:
+                #        await edit_discord_message(msg_id, content + "\n" + update_dsc_msg)
+                #except Exception as e:  # Catch any exception to avoid stopping the loop
+                #    await error_log_and_discord_message(e, "order_handler", "manage_active_fake_order", "An error occurred while getting or edditing message")
 
         # Determinded theta would win most of the battles.
         elif is_runner:
@@ -457,17 +457,19 @@ async def sell(quantity, unique_order_key, message_ids_dict, reason_for_selling)
 
     symbol, cp, strike, expiration_date, timestamp_from_order_id = unique_order_key.split('-')[:5]
     
-    message_channel = bot.get_channel(cred.DISCORD_CHANNEL_ID)
-    if message_channel is None:
-        print_log(f"Failed to find Discord channel with ID {cred.DISCORD_CHANNEL_ID}")
-        return None, None, None
+    #message_channel = bot.get_channel(cred.DISCORD_CHANNEL_ID)
+    #if message_channel is None:
+    #    print_log(f"Failed to find Discord channel with ID {cred.DISCORD_CHANNEL_ID}")
+    #    return None, None, None
     print_log(f"    [ORDER DETIALS] REASON FOR SELLING: {reason_for_selling}")
     #execute sell
-    order_result = await submit_option_order(
-        "FLAG/ZONE STRAT", symbol, strike, cp, bid, expiration_date, quantity, side, order_type
-    )
+    order_result = None #await submit_option_order(
+        #"FLAG/ZONE STRAT", symbol, strike, cp, bid, expiration_date, quantity, side, order_type
+    #)
     if order_result:
-        unique_order_ID, order_bid_price, order_quantity = await get_order_status(
+        unique_order_ID, order_bid_price, order_quantity = None, None, None
+        """
+        await get_order_status(
             strategy_name=None,
             real_money_activated=read_config('REAL_MONEY_ACTIVATED'),
             order_id=order_result['order_id'],
@@ -479,7 +481,7 @@ async def sell(quantity, unique_order_key, message_ids_dict, reason_for_selling)
             order_timestamp=timestamp_from_order_id,
             message_ids_dict=message_ids_dict
         )
-
+        """
         print_log(f"    [ORDER DETIALS] sell() = {order_bid_price}, {order_quantity}, {True}\n")
 
         return order_bid_price, order_quantity, True
@@ -573,21 +575,21 @@ async def sell_rest_of_active_order(reason_for_selling, retry_limit=3):
                         return
                     
                 #   Quantity of the order is zero now so we log it in discord
-                _message_ = await get_message_content(message_ids_dict[unique_order_id]) 
-                if _message_ is not None:
-                    trade_info = calculate_profit_percentage(_message_, unique_order_id)
-                    new_user_msg_content = _message_ + trade_info  # Append the trade info to the original message content
-                    order_log_file_path = Path(__file__).resolve().parent / f"{order_log_name}"
-                    await edit_discord_message(message_ids_dict[unique_order_id], new_user_msg_content, None, order_log_file_path)  
+                #_message_ = await get_message_content(message_ids_dict[unique_order_id]) 
+                #if _message_ is not None:
+                #    trade_info = calculate_profit_percentage(_message_, unique_order_id)
+                #    new_user_msg_content = _message_ + trade_info  # Append the trade info to the original message content
+                #    order_log_file_path = Path(__file__).resolve().parent / f"{order_log_name}"
+                #    await edit_discord_message(message_ids_dict[unique_order_id], new_user_msg_content, None, order_log_file_path)  
                     
-                    if os.path.exists(order_log_name):
-                        os.remove(order_log_name)
-                        #print_log(f"Order log file {order_log_name} deleted.")
+                #    if os.path.exists(order_log_name):
+                #        os.remove(order_log_name)
+                #        #print_log(f"Order log file {order_log_name} deleted.")
     
-                    current_order_active = False
-                    unique_order_id = None
-                else:
-                    await print_discord("Could not fetch message content.")
+                #    current_order_active = False
+                #    unique_order_id = None
+                #else:
+                #    await print_discord("Could not fetch message content.")
 
             else:
                 # Retry logic
@@ -600,7 +602,7 @@ async def sell_rest_of_active_order(reason_for_selling, retry_limit=3):
             return False  # Indicate failure after all retries
 
         return True
-    else: # this section is for 'submit_option_order_v2()' 
+    else: # this section is for our custom local paper trading system
         sell_quantity = order_quantity - sum(sale['quantity'] for sale in order_adjustments)
         parts = unique_order_id.split('-')
         if len(parts) >= 5:
@@ -650,29 +652,29 @@ async def sell_rest_of_active_order(reason_for_selling, retry_limit=3):
                 if unique_order_id in message_ids_dict:
                     original_msg_id = message_ids_dict[unique_order_id]
                     #print(f"Fetching message content for order ID: {unique_order_id}, Message ID: {original_msg_id}")
-                    try:
-                        original_content = await get_message_content(original_msg_id)
-                        if original_content:
-                            updated_content = original_content + "\n" + _message_
-                            #update discord order message
-                            await edit_discord_message(original_msg_id, updated_content)
-                        else:
-                            print_log(f"    [ORDER DETIALS] Could not retrieve original message content for ID {original_msg_id}")
-                    except Exception as e:  # Catch any exception to avoid stopping the loop
-                        await error_log_and_discord_message(e, "order_handler", "sell_rest_of_active_order", "An error occurred while getting or edditing message")
+                    #try:
+                    #    original_content = await get_message_content(original_msg_id)
+                    #    if original_content:
+                    #        updated_content = original_content + "\n" + _message_
+                    #        #update discord order message
+                    #        await edit_discord_message(original_msg_id, updated_content)
+                    #    else:
+                    #        print_log(f"    [ORDER DETIALS] Could not retrieve original message content for ID {original_msg_id}")
+                    #except Exception as e:  # Catch any exception to avoid stopping the loop
+                    #    await error_log_and_discord_message(e, "order_handler", "sell_rest_of_active_order", "An error occurred while getting or edditing message")
                 else:
                     print_log(f"    [ORDER DETIALS] Message ID for order {unique_order_id} not found in dictionary. Dictionary contents:\n{message_ids_dict}")
                 #   Quantity of the order is zero now so we log it in discord
-                _message_ = await get_message_content(message_ids_dict[unique_order_id])
-                if _message_ is not None:
-                    trade_info = calculate_profit_percentage(_message_, unique_order_id)
-                    new_user_msg_content = _message_ + trade_info  # Append the trade info to the original message content
-                    order_log_file_path = Path(__file__).resolve().parent / f"{order_log_name}"
-                    await edit_discord_message(message_ids_dict[unique_order_id], new_user_msg_content, None, order_log_file_path)
+                #_message_ = await get_message_content(message_ids_dict[unique_order_id])
+                #if _message_ is not None:
+                #    trade_info = calculate_profit_percentage(_message_, unique_order_id)
+                #    new_user_msg_content = _message_ + trade_info  # Append the trade info to the original message content
+                #    order_log_file_path = Path(__file__).resolve().parent / f"{order_log_name}"
+                #    await edit_discord_message(message_ids_dict[unique_order_id], new_user_msg_content, None, order_log_file_path)
                     
-                    if os.path.exists(order_log_name):
-                        os.remove(order_log_name)
-                        #print_log(f"Order log file {order_log_name} deleted.")
+                #    if os.path.exists(order_log_name):
+                #        os.remove(order_log_name)
+                #        #print_log(f"Order log file {order_log_name} deleted.")
                 
                 current_order_active = False
                 unique_order_id = None

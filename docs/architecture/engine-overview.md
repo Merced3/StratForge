@@ -9,6 +9,7 @@
 - Market bus: in-process candle-close events for strategy consumers.
 - Indicators/strategy: consume events to produce signals.
 - Options runner: listens to the market bus and routes signals into options execution.
+- Position watcher: streams mark prices for open options positions.
 - Reporting: Discord notifications, chart markers, trade ledger, EOD summary.
 
 ## Responsibilities (runtime roles)
@@ -29,7 +30,7 @@
 
 ## Event flow (short)
 
-Trade tick -> Feed queue -> Pipeline builds candles -> Storage append + indicator update -> Market bus -> Strategies -> Orders -> Trade ledger + Discord + chart refresh.
+Trade tick -> Feed queue -> Pipeline builds candles -> Storage append + indicator update -> Market bus -> Strategies -> Orders -> Position watcher -> Trade ledger + Discord + chart refresh.
 
 ## Next steps
 

@@ -153,6 +153,7 @@ StratForge/
 │   │   ├── __pycache__/
 │   │   ├── __init__.py
 │   │   ├── ema_crossover.py
+│   │   ├── exit_rules.py
 │   │   └── types.py
 │   └── __init__.py
 ├── tests/
@@ -164,13 +165,16 @@ StratForge/
 │   │   ├── __pycache__/
 │   │   ├── conftest.py
 │   │   ├── test_order_flow.py
+│   │   ├── test_position_watcher_flow.py
 │   │   └── test_strategy_runner_flow.py
 │   ├── options_unit_tests/
 │   │   ├── __pycache__/
 │   │   ├── conftest.py
 │   │   ├── test_execution_paper.py
 │   │   ├── test_execution_tradier.py
+│   │   ├── test_exit_rules.py
 │   │   ├── test_order_manager.py
+│   │   ├── test_position_actions.py
 │   │   ├── test_position_watcher.py
 │   │   ├── test_quote_hub.py
 │   │   ├── test_quote_service.py

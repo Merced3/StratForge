@@ -18,3 +18,12 @@ class StrategyContext:
 class StrategySignal:
     direction: str
     reason: str
+
+
+@dataclass(frozen=True)
+class PositionAction:
+    action: str  # "close" | "trim" | "add"
+    position_id: str
+    quantity: Optional[int] = None
+    reason: str = ""
+    timeframe: Optional[str] = None

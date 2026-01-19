@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import Optional
 
+from .exit_rules import ProfitTargetPlan, ProfitTargetStep
 from .types import StrategyContext, StrategySignal
-
 
 class EmaCrossoverStrategy:
     name = "ema-crossover"
@@ -13,6 +13,14 @@ class EmaCrossoverStrategy:
         self.fast = fast
         self.slow = slow
         self._last_direction: Optional[str] = None
+        # Take-profit plan uses watcher updates for trims/closes.
+        self.exit_plan = ProfitTargetPlan([
+            ProfitTargetStep(target_pct=100.0, action="trim", fraction=0.5),
+            ProfitTargetStep(target_pct=200.0, action="close"),
+        ])
+
+    def on_position_update(self, updates):
+        return self.exit_plan.evaluate(updates, timeframe=self.timeframe)
 
     def on_candle_close(self, context: StrategyContext) -> Optional[StrategySignal]:
         if context.timeframe != self.timeframe:

@@ -222,6 +222,10 @@ Key pieces:
 It decouples real-time quote tracking from strategy logic so strategies can
 react without re-polling the provider.
 
+**Runtime wiring:**
+When provided to `OptionsStrategyRunner`, updates are routed to each strategy's
+`on_position_update(updates)` handler (filtered by `strategy_tag`).
+
 ---
 
 ### `options/trade_ledger.py`
@@ -266,6 +270,20 @@ Key pieces:
 
 **Why it exists:**
 Strategies stay pure (no IO). The runner does the IO and order handling once.
+
+---
+
+### `strategies/options/exit_rules.py`
+
+**Purpose:** Reusable exit logic for profit targets (trim/close).
+
+Key pieces:
+
+- `ProfitTargetPlan`: stateful planner that fires steps once per position.
+- `ProfitTargetStep`: target percent + action (trim/close).
+
+**Why it exists:**
+Lets any strategy share the same profit-taking logic without duplicating code.
 
 ---
 
@@ -332,6 +350,20 @@ on_position_closed(position, order_result, reason, timeframe)
 
 Hooks accept an optional timeframe so marker files can be written to the
 correct chart (2M/5M/15M).
+
+### Position Update Hooks
+
+```bash
+on_position_update(updates)
+```
+
+When a strategy defines this method, the runner will pass position updates from
+the `PositionWatcher` filtered to that strategy's `strategy_tag`. The handler
+may return `PositionAction` (or a list) to trigger trims/closes.
+
+```bash
+PositionAction(action="close", position_id="...", reason="TP 200%", timeframe="15M")
+```
 
 ---
 
@@ -507,12 +539,12 @@ Implement `fetch_quotes()` and pass it into `OptionQuoteService`.
 - Paper execution does not model latency, slippage, or partial fills.
 - Quote cache is single-symbol, single-expiration per service instance.
 - Trade ledger is not yet summarized into daily analytics (JSONL only).
-- Position watcher is not wired into runtime yet.
+- Position watcher updates are not persisted (stream-only).
 
 ---
 
 ## 10) Next steps (optional)
 
 - Add daily analytics from `storage/options/trade_events.jsonl`.
-- Wire `PositionWatcher` into runtime for live P&L streaming.
+- Persist watcher updates if needed for replay/debugging.
 - Add selection strategies for tighter spreads or IV filters.

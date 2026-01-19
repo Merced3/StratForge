@@ -11,6 +11,7 @@ from integrations.discord import bot, calculate_day_performance, print_discord, 
 from error_handler import error_log_and_discord_message
 from options.execution_paper import PaperOrderExecutor
 from options.order_manager import OptionsOrderManager
+from options.position_watcher import PositionWatcher
 from options.quote_hub import resolve_expiration
 from options.quote_service import OptionQuoteService, TradierOptionsProvider
 from runtime.market_bus import MarketEventBus
@@ -46,10 +47,13 @@ class OptionsRuntime:
     quote_service: OptionQuoteService
     runner: OptionsStrategyRunner
     order_manager: OptionsOrderManager
+    position_watcher: Optional[PositionWatcher] = None
     on_position_closed: Optional[Callable] = None
 
     async def stop(self) -> None:
         self.runner.stop()
+        if self.position_watcher:
+            await self.position_watcher.stop()
         await self.quote_service.stop()
         await self.session.close()
 
@@ -118,6 +122,13 @@ async def start_options_runtime(
         executor = PaperOrderExecutor(quote_service.get_quote, logger=print_log)
         order_manager = OptionsOrderManager(quote_service, executor, logger=print_log)
         notifier = OptionsTradeNotifier(order_manager, logger=print_log)
+        position_watcher = PositionWatcher(
+            quote_service,
+            lambda: order_manager.list_positions().values(),
+            refresh_interval=1.0,
+            logger=print_log,
+        )
+        await position_watcher.start()
 
         runner = OptionsStrategyRunner(
             market_bus,
@@ -127,6 +138,7 @@ async def start_options_runtime(
             selector_name="price-range-otm",
             max_otm=max_otm,
             order_quantity=order_quantity,
+            position_watcher=position_watcher,
             on_position_opened=notifier.on_position_opened,
             on_position_closed=notifier.on_position_closed,
             on_position_added=notifier.on_position_added,
@@ -140,6 +152,7 @@ async def start_options_runtime(
             quote_service=quote_service,
             runner=runner,
             order_manager=order_manager,
+            position_watcher=position_watcher,
             on_position_closed=notifier.on_position_closed,
         )
     except Exception:

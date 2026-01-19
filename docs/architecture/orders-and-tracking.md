@@ -39,6 +39,16 @@ It is a reference for debugging, analytics, and future refactors.
 - One Discord message per position; edits on add/trim/close.
 - Restores message content from `storage/message_ids.json` if needed.
 
+### `options/position_watcher.py`
+
+- Streams mark price updates for open positions.
+- When wired into the runner, strategies can implement `on_position_update`.
+
+### `strategies/options/exit_rules.py`
+
+- Shared profit-target helpers for trim/close actions.
+- Used by strategies to keep exits consistent and testable.
+
 ---
 
 ## 3) Lifecycle flow

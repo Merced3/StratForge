@@ -10,9 +10,10 @@ NEXT THING TO WORK ON:
         [x] Setup quote Sim-Env. There will be times we need to test when market is not open.
         [x] setup tests
         [x] Build Position Order Watcher
-[-] wire position watcher into runtime/strategies OR Higher level Integration Tests.
+[x] wire position watcher into runtime/strategies OR Higher level Integration Tests.
     [x] integration test for strategy runner (market bus -> runner -> order manager)
-    [ ] wire position watcher into runtime/strategies
+    [x] wire position watcher into runtime/strategies
+    [x] integration test for position watcher -> strategy updates
 [-] start with 2 or 3 simple strategies: # See if we can handle multiple strategies
     [x] ema crossover
     [ ] candle ema break
@@ -31,6 +32,9 @@ NEXT THING TO WORK ON:
     [x] Pass timeframe into hooks for correct chart markers
 [x] Write to the ledger before any Discord call. Use the ledger for analytics later
     [x] Add append-only JSONL ledger + unit test coverage
+[x] Reusable exit rules for trims/TP in strategies
+    [x] Add `exit_rules.py` helper
+    [x] Add unit + integration tests for trim/close actions
 [x] Discord folder, `integrations/dicsord/`, 
     [x] Make this decoupled from the whole system, easy to change/add too.
     [x] Goal MOVE `print_discord_messages.py` into that folder so the root NOW is clueless on what discord actually does.

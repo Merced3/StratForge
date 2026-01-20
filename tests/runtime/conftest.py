@@ -71,6 +71,7 @@ def dummy_config(monkeypatch, ny_tz):
         mapping = {
             "REAL_MONEY_ACTIVATED": False,
             "START_OF_DAY_BALANCE": 1000.0,
+            "START_OF_DAY_DATE": "",
             "TIMEFRAMES": ["1M"],
             "CANDLE_BUFFER": 0,
             "SYMBOL": "TEST",

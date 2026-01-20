@@ -1,6 +1,7 @@
 {
     "REAL_MONEY_ACTIVATED": false,
     "START_OF_DAY_BALANCE": 39174.0,
+    "START_OF_DAY_DATE": "",
     "SYMBOL": "SPY",
     "TIMEFRAMES": [
         "2M",

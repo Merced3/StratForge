@@ -34,8 +34,16 @@ Usage (choose exactly one message source):
 7) Template message with defaults:
    python tools/discord_test_sender.py --template trade-open
 
-8) Template message with JSON overrides:
+8) Template message with overrides (file or inline):
    python tools/discord_test_sender.py --template trade-open --template-json path\\to\\trade_open.json
+   python tools/discord_test_sender.py --template trade-close --template-inline '{"avg_exit":2.15,"total_pnl":145.5,"percent":58.4}'
+   python tools/discord_test_sender.py --template trade-close --template-inline "{'avg_exit':2.15,'total_pnl':145.5,'percent':58.4}"
+   python tools/discord_test_sender.py --template trade-close --template-inline "@{avg_exit=2.15; total_pnl=145.5; percent=58.4}"
+
+9) Trade thread (send open then edit/append add/trim/close on the same message):
+   python tools/discord_test_sender.py --trade-thread
+   python tools/discord_test_sender.py --trade-thread --trade-thread-json path\\to\\trade_thread.json
+   python tools/discord_test_sender.py --trade-thread --trade-thread-inline '{"trade-open":{"strategy_name":"EMA Crossover"}}'
 
 Template names:
 - trade-open
@@ -53,6 +61,7 @@ Extras:
 
 import argparse
 import asyncio
+import ast
 import json
 import sys
 from datetime import datetime, time
@@ -68,6 +77,7 @@ import discord
 import cred
 from integrations.economic_calendar import EconomicCalendarService, ensure_economic_calendar_data
 from integrations.discord.templates import (
+    append_trade_update,
     format_day_performance,
     format_trade_add,
     format_trade_close,
@@ -105,7 +115,7 @@ TEMPLATE_DEFAULTS = {
         "profit_indicator": None,
     },
     "day-performance": {
-        "trades_str_list": ["$120.00, 25.00%+", "$-50.00, -10.00%-"],
+        "trades_str_list": ["$120.00, 25.00%", "$-50.00, -10.00%"],
         "total_bp_used_today": 1000.0,
         "start_balance": 20000.0,
         "end_balance": 20100.0,
@@ -129,6 +139,29 @@ def _parse_args() -> argparse.Namespace:
         type=str,
         default=None,
         help="Path to a JSON file with overrides for the selected template.",
+    )
+    parser.add_argument(
+        "--template-inline",
+        type=str,
+        default=None,
+        help="Inline JSON/Python/PowerShell object with overrides for the selected template.",
+    )
+    parser.add_argument(
+        "--trade-thread",
+        action="store_true",
+        help="Send a trade thread (open, add, trim, close) by editing the same message.",
+    )
+    parser.add_argument(
+        "--trade-thread-json",
+        type=str,
+        default=None,
+        help="Path to a JSON file with overrides for the trade thread templates.",
+    )
+    parser.add_argument(
+        "--trade-thread-inline",
+        type=str,
+        default=None,
+        help="Inline JSON/Python/PowerShell object with overrides for the trade thread templates.",
     )
     parser.add_argument("--econ", action="store_true", help="Send today's economic calendar message.")
     parser.add_argument(
@@ -155,24 +188,38 @@ def _validate_args(args: argparse.Namespace) -> None:
         bool(args.message_file),
         bool(args.template),
         bool(args.econ),
+        bool(args.trade_thread),
     ]
     if sum(sources) != 1:
-        raise ValueError("Choose exactly one: --message, --message-file, --template, or --econ.")
+        raise ValueError("Choose exactly one: --message, --message-file, --template, --econ, or --trade-thread.")
     if args.econ_refresh and not args.econ:
         raise ValueError("--econ-refresh only applies when using --econ.")
     if args.econ_date and not args.econ:
         raise ValueError("--econ-date only applies when using --econ.")
     if args.template_json and not args.template:
         raise ValueError("--template-json requires --template.")
+    if args.template_inline and not args.template:
+        raise ValueError("--template-inline requires --template.")
+    if args.template_json and args.template_inline:
+        raise ValueError("Use only one of --template-json or --template-inline.")
+    if args.trade_thread_json and not args.trade_thread:
+        raise ValueError("--trade-thread-json requires --trade-thread.")
+    if args.trade_thread_inline and not args.trade_thread:
+        raise ValueError("--trade-thread-inline requires --trade-thread.")
+    if args.trade_thread_json and args.trade_thread_inline:
+        raise ValueError("Use only one of --trade-thread-json or --trade-thread-inline.")
 
 
 def _load_message(args: argparse.Namespace) -> str:
     if args.econ:
         service = EconomicCalendarService()
         return service.build_daily_message(now=_parse_econ_datetime(args.econ_date))
+    if args.trade_thread:
+        raise ValueError("Trade thread uses a dedicated flow; message is built during send.")
 
     if args.template:
-        return _load_template_message(args)
+        inline = _load_template_inline(args.template_inline)
+        return _load_template_message(args, inline_overrides=inline)
 
     if args.message_file:
         return Path(args.message_file).read_text(encoding="utf-8")
@@ -183,10 +230,13 @@ def _load_message(args: argparse.Namespace) -> str:
     raise ValueError("Provide --message, --message-file, --template, or --econ.")
 
 
-def _load_template_message(args: argparse.Namespace) -> str:
+def _load_template_message(args: argparse.Namespace, inline_overrides: Optional[dict[str, Any]] = None) -> str:
     template_name = args.template
     data = dict(TEMPLATE_DEFAULTS[template_name])
-    overrides = _load_template_overrides(args.template_json)
+    if inline_overrides is not None:
+        overrides = inline_overrides
+    else:
+        overrides = _load_template_overrides(args.template_json)
     data.update(overrides)
 
     if template_name == "trade-open":
@@ -256,6 +306,129 @@ def _load_template_overrides(path: Optional[str]) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError("Template JSON overrides must be a JSON object.")
     return data
+
+
+def _load_template_inline(value: Optional[str]) -> Optional[dict[str, Any]]:
+    if value is None:
+        return None
+    data = _parse_inline_object(value, "Template inline JSON")
+    if not isinstance(data, dict):
+        raise ValueError("Template inline JSON must be an object.")
+    return data
+
+
+def _load_trade_thread_overrides(path: Optional[str]) -> dict[str, dict[str, Any]]:
+    if not path:
+        return {}
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("Trade thread overrides must be a JSON object.")
+    return _coerce_trade_thread_overrides(data)
+
+
+def _load_trade_thread_inline(value: Optional[str]) -> Optional[dict[str, dict[str, Any]]]:
+    if value is None:
+        return None
+    data = _parse_inline_object(value, "Trade thread inline JSON")
+    if not isinstance(data, dict):
+        raise ValueError("Trade thread inline JSON must be an object.")
+    return _coerce_trade_thread_overrides(data)
+
+
+def _parse_inline_object(value: str, label: str) -> Any:
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        try:
+            return ast.literal_eval(value)
+        except (ValueError, SyntaxError) as exc:
+            try:
+                return _parse_loose_object(value)
+            except ValueError as loose_exc:
+                raise ValueError(f"{label} must be a JSON object.") from loose_exc
+
+
+def _parse_loose_object(value: str) -> dict[str, Any]:
+    text = value.strip()
+    if text.startswith("@{") and text.endswith("}"):
+        text = text[2:-1]
+    elif text.startswith("{") and text.endswith("}"):
+        text = text[1:-1]
+    else:
+        raise ValueError("Inline object must be wrapped in braces.")
+
+    pairs = _split_pairs(text)
+    result: dict[str, Any] = {}
+    for pair in pairs:
+        if not pair:
+            continue
+        key, sep, raw = pair.partition(":")
+        if not sep:
+            key, sep, raw = pair.partition("=")
+        if not sep:
+            continue
+        key = key.strip().strip("'\"")
+        if not key:
+            continue
+        result[key] = _parse_loose_value(raw.strip())
+    return result
+
+
+def _split_pairs(text: str) -> list[str]:
+    parts = []
+    current = []
+    depth = 0
+    quote = None
+    for ch in text:
+        if quote:
+            if ch == quote:
+                quote = None
+            current.append(ch)
+            continue
+        if ch in ("'", '"'):
+            quote = ch
+            current.append(ch)
+            continue
+        if ch in "{[(":
+            depth += 1
+        elif ch in ")]}":
+            depth = max(depth - 1, 0)
+        if ch in ",;" and depth == 0:
+            parts.append("".join(current).strip())
+            current = []
+            continue
+        current.append(ch)
+    if current:
+        parts.append("".join(current).strip())
+    return parts
+
+
+def _parse_loose_value(value: str) -> Any:
+    raw = value.strip()
+    if not raw:
+        return ""
+    if (raw.startswith("'") and raw.endswith("'")) or (raw.startswith('"') and raw.endswith('"')):
+        return raw[1:-1]
+    lowered = raw.lower()
+    if lowered in ("true", "false"):
+        return lowered == "true"
+    if lowered in ("null", "none"):
+        return None
+    try:
+        if "." in raw or "e" in raw.lower():
+            return float(raw)
+        return int(raw)
+    except ValueError:
+        return raw
+
+
+def _coerce_trade_thread_overrides(data: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    overrides: dict[str, dict[str, Any]] = {}
+    for key, value in data.items():
+        if not isinstance(value, dict):
+            continue
+        overrides[key] = value
+    return overrides
 
 
 def _coerce_trades_list(value: Any) -> list[str]:
@@ -351,6 +524,89 @@ async def _send_message(
         await asyncio.sleep(0.2)
 
 
+async def _send_trade_thread(
+    channel_id: int,
+    overrides_path: Optional[str],
+    overrides_inline: Optional[str],
+    timeout: float,
+    debug: bool,
+) -> None:
+    intents = discord.Intents.default()
+    client = discord.Client(intents=intents)
+    inline = _load_trade_thread_inline(overrides_inline)
+    overrides = inline if inline is not None else _load_trade_thread_overrides(overrides_path)
+
+    async def _deliver() -> None:
+        try:
+            if debug:
+                print(f"[discord-test] Fetching channel {channel_id}...")
+            channel = client.get_channel(channel_id)
+            if channel is None:
+                channel = await client.fetch_channel(channel_id)
+
+            open_msg = _load_template_message(
+                argparse.Namespace(template="trade-open", template_json=None),
+                overrides.get("trade-open"),
+            )
+            if debug:
+                print("[discord-test] Sending trade open message...")
+            sent = await channel.send(open_msg)
+            content = sent.content
+
+            add_line = _load_template_message(
+                argparse.Namespace(template="trade-add", template_json=None),
+                overrides.get("trade-add"),
+            )
+            content = append_trade_update(content, add_line)
+            await sent.edit(content=content)
+
+            trim_line = _load_template_message(
+                argparse.Namespace(template="trade-trim", template_json=None),
+                overrides.get("trade-trim"),
+            )
+            content = append_trade_update(content, trim_line)
+            await sent.edit(content=content)
+
+            close_summary = _load_template_message(
+                argparse.Namespace(template="trade-close", template_json=None),
+                overrides.get("trade-close"),
+            )
+            content = append_trade_update(content, close_summary)
+            await sent.edit(content=content)
+            if debug:
+                print("[discord-test] Trade thread updated.")
+        except discord.NotFound:
+            print(f"Channel not found for ID {channel_id}.")
+        except discord.Forbidden as exc:
+            print(f"Forbidden: {exc}")
+        except discord.HTTPException as exc:
+            print(f"Discord API error: {exc}")
+        finally:
+            await client.close()
+
+    @client.event
+    async def on_ready() -> None:
+        if debug:
+            print(f"[discord-test] Logged in as {client.user}.")
+        await _deliver()
+
+    if debug:
+        print("[discord-test] Connecting to Discord...")
+    try:
+        await asyncio.wait_for(client.start(cred.DISCORD_TOKEN), timeout=timeout)
+    except asyncio.TimeoutError:
+        print(f"[discord-test] Timeout after {timeout:.0f}s waiting for send.")
+        await client.close()
+    except discord.LoginFailure as exc:
+        print(f"[discord-test] Login failed: {exc}")
+        await client.close()
+    except Exception as exc:
+        print(f"[discord-test] Discord client error: {exc}")
+        await client.close()
+    finally:
+        await asyncio.sleep(0.2)
+
+
 async def main() -> None:
     args = _parse_args()
     _validate_args(args)
@@ -365,6 +621,18 @@ async def main() -> None:
 
     if args.econ_refresh:
         await ensure_economic_calendar_data()
+
+    if args.trade_thread:
+        if args.dry_run:
+            print("[discord-test] --trade-thread ignores --dry-run (edits must be sent).")
+        await _send_trade_thread(
+            channel_id,
+            args.trade_thread_json,
+            args.trade_thread_inline,
+            timeout=args.timeout,
+            debug=args.debug,
+        )
+        return
 
     message = _load_message(args)
     if args.dry_run:

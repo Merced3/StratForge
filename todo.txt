@@ -55,6 +55,12 @@ NEXT THING TO WORK ON:
         - Thats not the "goal" but it keeps us to write good code.
     [x] `README.md` → usage + examples.
     [x] Be able to test any message/template with a tool
+    [x] Discord template preview checklist (test channel)
+        [x] trade-open (default values)
+        [x] trade-add (default values)
+        [x] trade-trim (default values)
+        [x] trade-close (profit + loss + b/e cases)
+        [x] day-performance (gain + loss + b/e cases)
 [x] Decouple econ calender data script into integrations folder.
 
 Key:

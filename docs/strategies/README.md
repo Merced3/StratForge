@@ -59,3 +59,4 @@ Notes:
 * `fraction` trims a percent of the open contracts (rounded to at least 1).
 * `quantity` trims a fixed number of contracts.
 * `close` ignores quantity and exits the full position.
+* Set `allow_full_close=False` on trim steps to skip trims that would close a 1-lot.

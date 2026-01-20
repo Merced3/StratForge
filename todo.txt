@@ -54,7 +54,9 @@ NEXT THING TO WORK ON:
         file.
         - Thats not the "goal" but it keeps us to write good code.
     [x] `README.md` → usage + examples.
+    [x] Be able to test any message/template with a tool
+[x] Decouple econ calender data script into integrations folder.
 
-Key: 
+Key:
     [x] = done/working
     [-] = pending/developing currently

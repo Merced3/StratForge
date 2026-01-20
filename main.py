@@ -6,7 +6,7 @@ from utils.order_utils import initialize_csv_order_log
 from indicators.ema_manager import hard_reset_ema_state, migrate_ema_state_schema
 from tools.compact_parquet import end_of_day_compaction
 from tools.audit_candles import audit_dayfile
-from economic_calender_scraper import ensure_economic_calendar_data, setup_economic_news_message
+from integrations.economic_calendar import ensure_economic_calendar_data, setup_economic_news_message
 from integrations.discord import bot, calculate_day_performance, print_discord, send_file_discord
 from error_handler import error_log_and_discord_message
 from options.execution_paper import PaperOrderExecutor

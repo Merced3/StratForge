@@ -1,5 +1,6 @@
 import re
-from typing import Optional
+from datetime import datetime, time
+from typing import Iterable, Optional
 
 
 def extract_trade_results(message, message_id):
@@ -171,6 +172,24 @@ Percent Gain/Loss: {percent_gl:.2f}%
 """
 
 
+def format_economic_news_message(
+    events: Iterable,
+    header: str = "TODAYS MAJOR ECONOMIC NEWS",
+    empty_message: str = "NO MAJOR NEWS EVENTS TODAY",
+) -> str:
+    grouped = _group_economic_events(events)
+    if not grouped:
+        return f"**{empty_message}**"
+
+    lines = [f"**{header}**", "-----"]
+    for time_label in _sorted_time_labels(grouped.keys()):
+        lines.append(f"**{time_label}**")
+        for title in grouped[time_label]:
+            lines.append(f"- {title}")
+        lines.append("")
+    return "\n".join(lines).strip()
+
+
 def _strip_markdown(message: str) -> str:
     return message.replace("**", "").replace("__", "").replace("`", "")
 
@@ -201,3 +220,36 @@ def _format_signed_money(value: Optional[float]) -> str:
     if value is None:
         return "$0.00"
     return f"${value:.2f}"
+
+
+def _group_economic_events(events: Iterable) -> dict[str, list[str]]:
+    grouped: dict[str, list[str]] = {}
+    seen: dict[str, set[str]] = {}
+    for event in events or []:
+        time_label = getattr(event, "time_label", None)
+        title = getattr(event, "title", None)
+        if not time_label or not title:
+            continue
+        time_label = str(time_label).strip()
+        title = str(title).strip()
+        if not time_label or not title:
+            continue
+        if time_label not in grouped:
+            grouped[time_label] = []
+            seen[time_label] = set()
+        if title in seen[time_label]:
+            continue
+        seen[time_label].add(title)
+        grouped[time_label].append(title)
+    return grouped
+
+
+def _sorted_time_labels(labels: Iterable[str]) -> list[str]:
+    return sorted(labels, key=_time_sort_key)
+
+
+def _time_sort_key(label: str) -> time:
+    try:
+        return datetime.strptime(label.strip(), "%I:%M %p").time()
+    except ValueError:
+        return time.max

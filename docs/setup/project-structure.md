@@ -72,8 +72,19 @@ StratForge/
 │   │   ├── __init__.py
 │   │   ├── client.py
 │   │   └── templates.py
+│   ├── economic_calendar/
+│   │   ├── providers/
+│   │   │   ├── __init__.py
+│   │   │   └── trading_economics.py
+│   │   ├── __init__.py
+│   │   ├── models.py
+│   │   ├── README.md
+│   │   ├── service.py
+│   │   └── store.py
 │   └── __init__.py
 ├── legacy/
+│   ├── ecom_cal_v1/
+│   │   └── economic_calender_scraper.py.py
 │   └── options_v1/
 │       ├── README.md
 │       ├── buy_option.py
@@ -209,6 +220,7 @@ StratForge/
 │   ├── candles_io.py
 │   ├── compact_parquet.py
 │   ├── csv_to_parquet_days.py
+│   ├── discord_test_sender.py
 │   ├── generate_structure.py
 │   ├── normalize_ts_all.py
 │   └── repair_candles.py
@@ -246,7 +258,6 @@ StratForge/
 ├── cred-example.py
 ├── cred.py
 ├── data_acquisition.py
-├── economic_calender_scraper.py
 ├── error_handler.py
 ├── main.py
 ├── objects.py

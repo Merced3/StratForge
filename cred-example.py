@@ -9,6 +9,7 @@
 # Discord bot related code
 DISCORD_TOKEN = "Go to discord dev portal to get this info"
 DISCORD_CHANNEL_ID = 1234567890 # Copy and paste your channel ID
+DISCORD_TEST_CHANNEL_ID = 1234567890 # Optional: test channel ID for tooling
 DISCORD_CLIENT_SECRET = "Go to discord dev portal to get this info"
 DISCORD_APPLICATION_ID = 1234567890 # Copy and paste your bot's ID
 DISCORD_PUBLIC_KEY = "Go to discord dev portal to get this info"

@@ -44,7 +44,7 @@
         "START_POINT_MAX_NUM_FLAGS": 3
     },
     "OPTION_EXPIRATION_DTE": "not specified",
-    "RECORD_OPTIONS_QUOTES": true,
+    "RECORD_OPTIONS_QUOTES": false,
     "OPTIONS_QUOTES_DIR": "storage/options/quotes",
     "MINS_BEFORE_MAJOR_NEWS_ORDER_CANCELATION": 20,
     "LIVE_BARS": {

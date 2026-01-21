@@ -23,7 +23,5 @@ storage/objects/objects.json
 storage/objects/timeline.json
 storage/csv/
 storage/data/
-
-# Keep these JSONs tracked if needed
-!storage/message_ids.json
-!storage/week_ecom_calendar.json
+storage/options/quotes/
+storage/options/trade_events.jsonl

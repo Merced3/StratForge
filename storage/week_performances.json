@@ -1107,12 +1107,12 @@
         "week_number": 91,
         "week_start_end_date": "1/19/2025-01/23/2025",
         "start_ammount": 39174.0,
-        "end_ammount": 39174.0,
-        "total_made": 0.0,
-        "num_of_trades": 0,
-        "num_of_profitable_trades": 0,
-        "num_of_negitive_trades": 0,
-        "description": "Day 1, Market was closed due too MLK day, worked on decoupling the economic calender data AND adding a discord message preview tester script in the `tools/` folder.",
+        "end_ammount": 39166.0,
+        "total_made": -8.0,
+        "num_of_trades": 3,
+        "num_of_profitable_trades": 1,
+        "num_of_negitive_trades": 2,
+        "description": "Day 1, Market was closed due too MLK day, worked on decoupling the economic calender data AND adding a discord message preview tester script in the `tools/` folder. Day 2, took 3 trades 2 looses 1 winner, each trade did not have an error which is great, ledger worked great, worked/finished the errors we did have today; polishing discord template messages, trim edge case we solved, EOD balance calculations are wrong and work now.",
         "important_message_ids": []
     }
 ]

@@ -5,6 +5,15 @@ from utils.time_utils import generate_candlestick_times, add_seconds_to_time
 from pipeline.state import reset_day_state
 from session import normalize_session_times
 from runtime.market_bus import CandleCloseEvent
+from shared_state import print_log
+
+def _log_candle_close(now, timeframe, candle, count, source):
+    timestamp = now.strftime("%H:%M:%S")
+    print_log(
+        f"[{timestamp}] {timeframe} candle closed ({source}) "
+        f"count={count} O:{candle.get('open')} H:{candle.get('high')} "
+        f"L:{candle.get('low')} C:{candle.get('close')}"
+    )
 
 def build_candle_schedule(session_open, session_close, timeframes, durations, buffer_secs):
     timestamps = {
@@ -66,6 +75,8 @@ async def run_pipeline(queue, config, deps, sinks, now_fn=None):
                             sinks.append_candle(config.symbol, timeframe, candle)
                         except Exception as exc:
                             await _safe_on_error(exc, "append_candle")
+                        candle_counts[timeframe] += 1
+                        _log_candle_close(now, timeframe, candle, candle_counts[timeframe], "eod")
                 current_candles, candle_counts, start_times = reset_day_state(config.timeframes, now)
                 async with deps.latest_price_lock:
                     deps.shared_state.latest_price = None
@@ -102,12 +113,13 @@ async def run_pipeline(queue, config, deps, sinks, now_fn=None):
                             except Exception as exc:
                                 await _safe_on_error(exc, "append_candle")
                             candle_counts[timeframe] += 1
+                            source = "schedule" if f_now in timestamps[timeframe] else "buffer"
+                            _log_candle_close(now, timeframe, candle, candle_counts[timeframe], source)
                             try:
                                 await sinks.update_ema(candle, timeframe)
                             except Exception as exc:
                                 await _safe_on_error(exc, "update_ema")
                             if sinks.on_candle_close:
-                                source = "schedule" if f_now in timestamps[timeframe] else "buffer"
                                 event = CandleCloseEvent(
                                     symbol=config.symbol,
                                     timeframe=timeframe,

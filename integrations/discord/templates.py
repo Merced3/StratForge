@@ -155,7 +155,13 @@ def format_day_performance(
     profit_loss,
     percent_gl,
 ):
-    trades_str = "\n".join(trades_str_list)
+    trades = _normalize_trade_entries(trades_str_list)
+    formatted = [_format_trade_summary_line(trade) for trade in trades]
+    formatted = [line for line in formatted if line]
+    if not formatted:
+        trades_str = "No trades today."
+    else:
+        trades_str = "\n".join(formatted)
     return f"""
 All Trades:
 {trades_str}
@@ -253,3 +259,90 @@ def _time_sort_key(label: str) -> time:
         return datetime.strptime(label.strip(), "%I:%M %p").time()
     except ValueError:
         return time.max
+
+
+def _normalize_trade_entries(trades) -> list[str]:
+    if trades is None:
+        return []
+    if isinstance(trades, (list, tuple)):
+        entries = [str(item).strip() for item in trades if str(item).strip()]
+        if entries and all(entry in ("[]", "[ ]") for entry in entries):
+            return []
+        if len(entries) == 1:
+            if entries[0] in ("[]", "[ ]"):
+                return []
+            split = _split_compact_trade_entries(entries[0])
+            return split or entries
+        return entries
+    text = str(trades).strip()
+    if text in ("[]", "[ ]"):
+        return []
+    if not text:
+        return []
+    split = _split_compact_trade_entries(text)
+    return split or [text]
+
+
+def _split_compact_trade_entries(text: str) -> list[str]:
+    raw = text.strip()
+    if raw.startswith("[") and raw.endswith("]"):
+        raw = raw[1:-1].strip()
+    pattern = re.compile(r"\$-?[0-9,]+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?%[+-]?[✅❌]?", re.UNICODE)
+    matches = pattern.findall(raw)
+    if matches:
+        return [match.strip() for match in matches]
+    if "$" not in raw:
+        return []
+    entries = []
+    for part in raw.split("$"):
+        part = part.strip(" ,")
+        if not part:
+            continue
+        entries.append(f"${part}")
+    return entries
+
+
+def _format_trade_summary_line(line: str) -> str:
+    text = str(line).strip()
+    if not text:
+        return ""
+    text = text.strip()
+    text = _strip_trailing_indicator(text)
+    emoji = _infer_trade_emoji(text)
+    text = _strip_leading_emoji(text)
+    return f"{emoji} {text}".strip()
+
+
+def _strip_trailing_indicator(text: str) -> str:
+    cleaned = re.sub(r"[✅❌]\s*$", "", text).strip()
+    cleaned = re.sub(r"(%)([+-])\s*$", r"\1", cleaned).strip()
+    return cleaned
+
+
+def _strip_leading_emoji(text: str) -> str:
+    if text.startswith(("✅", "❌", "⚪")):
+        return text[1:].lstrip()
+    return text
+
+
+def _infer_trade_emoji(text: str) -> str:
+    if "✅" in text:
+        return "✅"
+    if "❌" in text:
+        return "❌"
+    money_match = re.search(r"\$(-?[0-9,]+(?:\.\d+)?)", text)
+    if money_match:
+        value = float(money_match.group(1).replace(",", ""))
+        if value > 0:
+            return "✅"
+        if value < 0:
+            return "❌"
+        return "⚪"
+    percent_match = re.search(r"(-?\d+(?:\.\d+)?)%", text)
+    if percent_match:
+        value = float(percent_match.group(1))
+        if value > 0:
+            return "✅"
+        if value < 0:
+            return "❌"
+    return "⚪"

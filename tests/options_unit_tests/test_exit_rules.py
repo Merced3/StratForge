@@ -92,6 +92,29 @@ def test_profit_target_plan_trim_exceeding_quantity_closes():
     assert actions[0].quantity is None
 
 
+def test_profit_target_plan_trim_skips_if_would_close():
+    plan = ProfitTargetPlan(
+        [
+            ProfitTargetStep(
+                target_pct=100.0,
+                action="trim",
+                fraction=0.5,
+                allow_full_close=False,
+            ),
+            ProfitTargetStep(target_pct=200.0, action="close"),
+        ]
+    )
+
+    update = _make_update("pos-5b", pct=120.0, qty=1)
+    actions = plan.evaluate_update(update)
+    assert actions == []
+
+    second_update = _make_update("pos-5b", pct=220.0, qty=1)
+    actions = plan.evaluate_update(second_update)
+    assert len(actions) == 1
+    assert actions[0].action == "close"
+
+
 def test_profit_target_plan_fires_only_once_per_step():
     plan = ProfitTargetPlan([ProfitTargetStep(target_pct=100.0, action="trim", fraction=0.5)])
 

@@ -15,8 +15,16 @@ class EmaCrossoverStrategy:
         self._last_direction: Optional[str] = None
         # Take-profit plan uses watcher updates for trims/closes.
         self.exit_plan = ProfitTargetPlan([
-            ProfitTargetStep(target_pct=100.0, action="trim", fraction=0.5),
-            ProfitTargetStep(target_pct=200.0, action="close"),
+            ProfitTargetStep(
+                target_pct=100.0,
+                action="trim",
+                fraction=0.5,
+                allow_full_close=False,
+            ),
+            ProfitTargetStep(
+                target_pct=200.0, 
+                action="close",
+            ),
         ])
 
     def on_position_update(self, updates):

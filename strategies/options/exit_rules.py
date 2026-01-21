@@ -15,6 +15,7 @@ class ProfitTargetStep:
     quantity: Optional[int] = None
     fraction: Optional[float] = None
     reason: Optional[str] = None
+    allow_full_close: bool = True
 
 
 class ProfitTargetPlan:
@@ -78,6 +79,8 @@ class ProfitTargetPlan:
         if quantity <= 0:
             return None
         if quantity >= update.quantity_open:
+            if not step.allow_full_close:
+                return None
             return PositionAction(
                 action="close",
                 position_id=update.position_id,

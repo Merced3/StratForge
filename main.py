@@ -15,6 +15,7 @@ from options.order_manager import OptionsOrderManager
 from options.position_watcher import PositionWatcher
 from options.quote_hub import resolve_expiration
 from options.quote_service import OptionQuoteService, TradierOptionsProvider
+from options.trade_ledger import sum_realized_pnl_for_day
 from runtime.market_bus import MarketEventBus
 from runtime.options_trade_notifier import OptionsTradeNotifier
 from runtime.options_strategy_runner import OptionsStrategyRunner, discover_strategies
@@ -83,6 +84,21 @@ def _load_tradier_config() -> Tuple[str, str]:
     if not base_url or not token:
         raise RuntimeError("Tradier config missing; set base URL and access token in cred.py")
     return base_url, token
+
+
+async def resolve_start_of_day_balance(trading_day: str) -> float:
+    rma = read_config("REAL_MONEY_ACTIVATED")
+    stored_day = read_config("START_OF_DAY_DATE")
+    if stored_day == trading_day:
+        balance = read_config("START_OF_DAY_BALANCE")
+        return balance if balance is not None else 0.0
+    balance = await get_account_balance(rma) if rma else read_config("START_OF_DAY_BALANCE")
+    if balance is None:
+        balance = 0.0
+    if not os.getenv("PYTEST_CURRENT_TEST"):
+        update_config_value("START_OF_DAY_BALANCE", balance)
+        update_config_value("START_OF_DAY_DATE", trading_day)
+    return balance
 
 
 async def start_options_runtime(
@@ -330,7 +346,7 @@ async def main_loop(session_open, session_close):
         except Exception as e:
             print_log(f"[OPTIONS] Failed to start options runtime: {e}")
 
-        start_of_day_account_balance = await get_account_balance(read_config('REAL_MONEY_ACTIVATED')) if read_config('REAL_MONEY_ACTIVATED') else read_config('START_OF_DAY_BALANCE')
+        start_of_day_account_balance = await resolve_start_of_day_balance(trading_day_str)
         f_s_account_balance = "{:,.2f}".format(start_of_day_account_balance)
         await print_discord(f"Market is Open! Account BP: ${f_s_account_balance}")
         await send_file_discord(SPY_15M_ZONE_CHART_PATH)
@@ -371,9 +387,16 @@ async def main_loop(session_open, session_close):
 async def process_end_of_day(trading_day_str: Optional[str] = None):
     # 1. Get balances and calculate P/L
     rma = read_config('REAL_MONEY_ACTIVATED')
-    start_of_day_account_balance = await get_account_balance(rma) if rma else read_config('START_OF_DAY_BALANCE')
-    todays_profit_loss = 0 #sum(get_profit_loss_orders_list())
-    end_of_day_account_balance = start_of_day_account_balance + todays_profit_loss
+    start_of_day_account_balance = read_config('START_OF_DAY_BALANCE')
+    if start_of_day_account_balance is None:
+        start_of_day_account_balance = await get_account_balance(rma) if rma else 0.0
+    if rma:
+        end_of_day_account_balance = await get_account_balance(rma)
+        if end_of_day_account_balance is None:
+            end_of_day_account_balance = start_of_day_account_balance
+    else:
+        todays_profit_loss = sum_realized_pnl_for_day(trading_day_str)
+        end_of_day_account_balance = start_of_day_account_balance + todays_profit_loss
     
     # 2. Announce/report to Discord
     f_e_account_balance = "{:,.2f}".format(end_of_day_account_balance)

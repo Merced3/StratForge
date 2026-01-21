@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 from paths import OPTIONS_TRADE_LEDGER_PATH
+from utils.timezone import NY_TZ
 
 from .execution_tradier import OrderSubmitResult
 from .order_manager import Position
@@ -87,3 +88,47 @@ def record_trade_event(
     except Exception as exc:
         if logger:
             logger(f"[LEDGER] Failed to write trade event: {exc}")
+
+
+def sum_realized_pnl_for_day(
+    trading_day: Optional[str],
+    path: Optional[Path] = None,
+) -> float:
+    if not trading_day:
+        trading_day = datetime.now(NY_TZ).strftime("%Y-%m-%d")
+    target = path or OPTIONS_TRADE_LEDGER_PATH
+    if not target.exists():
+        return 0.0
+    total = 0.0
+    try:
+        with target.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    payload = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if payload.get("event") != "close":
+                    continue
+                ts = payload.get("ts")
+                if not ts:
+                    continue
+                try:
+                    timestamp = datetime.fromisoformat(ts)
+                except ValueError:
+                    continue
+                day = timestamp.astimezone(NY_TZ).strftime("%Y-%m-%d")
+                if day != trading_day:
+                    continue
+                realized = payload.get("realized_pnl")
+                if realized is None:
+                    continue
+                try:
+                    total += float(realized)
+                except (TypeError, ValueError):
+                    continue
+    except OSError:
+        return 0.0
+    return total

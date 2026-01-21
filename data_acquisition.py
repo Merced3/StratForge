@@ -200,9 +200,13 @@ async def get_current_price() -> float:
         print_log(f"[ERROR] Error fetching current price: {e}")
         return 0.0
 
-async def add_markers(event_type, x=None, y=None, percentage=None, live_tf="2M"):
-    
-    x_coord = get_current_candle_index(live_tf) if x is None else x
+async def add_markers(event_type, x=None, y=None, percentage=None, live_tf="2M", x_offset: int = 0):
+
+    if x is None:
+        # Marker events fire after a candle closes; offset pushes markers to the next candle index.
+        x_coord = get_current_candle_index(live_tf) + x_offset
+    else:
+        x_coord = x
     y_coord = y if y else await get_current_price()
     print_log(f"    [MARKER-{live_tf}] {x_coord}, {y_coord}, {event_type}")
 

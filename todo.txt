@@ -67,7 +67,7 @@ NEXT THING TO WORK ON:
     [x] Use trade ledger realized P/L for paper-mode EOD balance
     [ ] Add sanity logging: ledger P/L vs Discord totals
     [ ] Validate real-money EOD uses account balance and respects stored start-of-day
-
+[x] fix markers, need offset by 1
 Key:
     [x] = done/working
     [-] = pending/developing currently

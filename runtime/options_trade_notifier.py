@@ -95,7 +95,7 @@ class OptionsTradeNotifier:
                 self._trade_messages[position.position_id] = trade_state
                 save_message_ids(position.position_id, sent.id)
             marker_tf = timeframe or "2M"
-            await add_markers("buy", live_tf=marker_tf)
+            await add_markers("buy", live_tf=marker_tf, x_offset=1)  # Trade executes after close; mark next candle.
         except Exception as exc:
             self._log(f"[OPTIONS] Open notify failed: {exc}")
 
@@ -124,7 +124,7 @@ class OptionsTradeNotifier:
             update_line = format_trade_add(quantity, total_value, fill_price, reason)
             await self._edit_trade_message(position.position_id, update_line)
             marker_tf = timeframe or "2M"
-            await add_markers("buy", live_tf=marker_tf)
+            await add_markers("buy", live_tf=marker_tf, x_offset=1)  # Trade executes after close; mark next candle.
         except Exception as exc:
             self._log(f"[OPTIONS] Add notify failed: {exc}")
 
@@ -153,7 +153,7 @@ class OptionsTradeNotifier:
             update_line = format_trade_trim(quantity, total_value, fill_price, reason)
             await self._edit_trade_message(position.position_id, update_line)
             marker_tf = timeframe or "2M"
-            await add_markers("trim", live_tf=marker_tf)
+            await add_markers("trim", live_tf=marker_tf, x_offset=1)  # Trade executes after close; mark next candle.
         except Exception as exc:
             self._log(f"[OPTIONS] Trim notify failed: {exc}")
 
@@ -195,7 +195,7 @@ class OptionsTradeNotifier:
             else:
                 await print_discord(summary)
             marker_tf = timeframe or "2M"
-            await add_markers("sell", live_tf=marker_tf)
+            await add_markers("sell", live_tf=marker_tf, x_offset=1)  # Trade executes after close; mark next candle.
         except Exception as exc:
             self._log(f"[OPTIONS] Close notify failed: {exc}")
 

@@ -1107,12 +1107,12 @@
         "week_number": 91,
         "week_start_end_date": "1/19/2025-01/23/2025",
         "start_ammount": 39174.0,
-        "end_ammount": 39166.0,
-        "total_made": -8.0,
+        "end_ammount": 39242.0,
+        "total_made": 68.0,
         "num_of_trades": 3,
-        "num_of_profitable_trades": 1,
-        "num_of_negitive_trades": 2,
-        "description": "Day 1, Market was closed due too MLK day, worked on decoupling the economic calender data AND adding a discord message preview tester script in the `tools/` folder. Day 2, took 3 trades 2 looses 1 winner, each trade did not have an error which is great, ledger worked great, worked/finished the errors we did have today; polishing discord template messages, trim edge case we solved, EOD balance calculations are wrong and work now.",
+        "num_of_profitable_trades": 2,
+        "num_of_negitive_trades": 3,
+        "description": "Day 1, Market was closed due too MLK day, worked on decoupling the economic calender data AND adding a discord message preview tester script in the `tools/` folder. Day 2, took 3 trades 2 looses 1 winner, each trade did not have an error which is great, ledger worked great, worked/finished the errors we did have today; polishing discord template messages, trim edge case we solved, EOD balance calculations are wrong and work now. Day 3, didn't work on program today, just focussed on the analytical planning of strategy EV evaluations, today it took 2 trades first negitive (-64%) then 2nd trade hit 200%, which was awesome, we were in that trade for a while, made $76 today.",
         "important_message_ids": []
     }
 ]

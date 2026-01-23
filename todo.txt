@@ -1,19 +1,37 @@
-Everything I'm focusing is:
-Decoupling, I want to make this current system as simple, modular, easy to change, as possible.
-So that if I do want to make changes and update those changes, as its running - to other system's the other systems don't fail.
+Branch focus: analytics setup for exit research (no live changes yet).
+Goal: maximize long-term expectancy with controlled drawdown and simple, testable rules.
+Ethos: Keep systems decoupled, simple, and modular. Changes should be isolated and safe to deploy while running so one failure does not cascade.
 
 Key:
-    [x] = done/working
-    [-] = pending/developing currently
+    [x] = done
+    [-] = in progress
+    [ ] = todo
 
-NEXT THING TO WORK ON:
-[-] start with 2 or 3 simple strategies: # See if we can handle multiple strategies
-    [x] ema crossover
-    [ ] candle ema break
-    [ ] object break (zone/level)
-[x] Fix EOD balance source-of-truth (start-of-day + P/L)
-    [x] Capture start-of-day balance once per trading day (avoid overwriting on restarts)
-    [x] Use trade ledger realized P/L for paper-mode EOD balance
-    [ ] Add sanity logging: ledger P/L vs Discord totals
-    [ ] Validate real-money EOD uses account balance and respects stored start-of-day
-[-] Work on Analytics + Logging Branch
+Analytics Setup (branch)
+[-] Define success metrics and risk limits
+    [ ] Target metrics: expectancy, win rate, avg win/loss, max drawdown, max losing streak, avg hold time
+    [ ] Risk limits: none (exploration) but track daily drawdown + streaks
+[-] Define data to record (minimal and useful)
+    [ ] Keep trade ledger as source of truth
+    [ ] Add per-trade position update log (mark price, unrealized pct, qty open)
+    [ ] Do not record full option chains by default
+[-] Cost model (use same assumptions in live + analytics)
+    [ ] Commission per contract
+    [ ] Slippage model (buy=ask, sell=bid or fixed ticks)
+[-] Analytics v1 (ledger only)
+    [ ] Group by position_id
+    [ ] Compute realized P/L, win rate, avg win/loss, hold time, strategy_tag
+[-] Analytics v2 (path based)
+    [ ] MFE/MAE per trade
+    [ ] Time-to-target and time-to-stop distributions
+[-] Exit policy testing (offline only)
+    [ ] Simulate 2-3 simple exit rules
+    [ ] Walk-forward split (train/test) and keep the simplest rule that holds up
+[-] Decision gate before changing live exits
+    [ ] Require N trades (start at 100) and stable out-of-sample metrics
+
+Current answers:
+- Max daily loss/drawdown: none (exploration) — still track the numbers
+- Minimum trades before changing exits: 100 (tentative)
+- Trade frequency preference: open to all
+- Hold past close: no (0DTE only for now)

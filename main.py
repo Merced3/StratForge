@@ -19,6 +19,7 @@ from options.trade_ledger import sum_realized_pnl_for_day
 from runtime.market_bus import MarketEventBus
 from runtime.options_trade_notifier import OptionsTradeNotifier
 from runtime.options_strategy_runner import OptionsStrategyRunner, discover_strategies
+from runtime.strategy_reporting import send_strategy_reports
 from shared_state import print_log
 import asyncio
 from dataclasses import dataclass
@@ -404,6 +405,7 @@ async def process_end_of_day(trading_day_str: Optional[str] = None):
     message_ids_dict = get_correct_message_ids()
     output_message = await calculate_day_performance(message_ids_dict, start_of_day_account_balance, end_of_day_account_balance)
     await print_discord(output_message)
+    await send_strategy_reports(trading_day=trading_day_str, logger=print_log)
 
     # 3. Send relevant images + files to Discord
     today_chart_info = {

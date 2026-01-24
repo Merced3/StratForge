@@ -18,9 +18,15 @@ Analytics Setup (branch)
 [-] Cost model (use same assumptions in live + analytics)
     [ ] Commission per contract
     [ ] Slippage model (buy=ask, sell=bid or fixed ticks)
-[-] Analytics v1 (ledger only)
-    [ ] Group by position_id
-    [ ] Compute realized P/L, win rate, avg win/loss, hold time, strategy_tag
+[x] Analytics v1 (ledger only)
+    [x] Group by position_id
+    [x] Compute realized P/L, win rate, avg win/loss, hold time, strategy_tag
+[-] Strategy reporting (EOD)
+    [x] Strategy report template
+    [x] EOD sender (ledger-based)
+    [x] Configure dedicated strategy-reporting channel (cred)
+    [ ] Confirm message IDs persist + edits (no flooding)
+    [ ] Validate reporting on live data (100+ trades, per-strategy totals)
 [-] Analytics v2 (path based)
     [ ] MFE/MAE per trade
     [ ] Time-to-target and time-to-stop distributions

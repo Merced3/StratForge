@@ -12,7 +12,7 @@ if str(ROOT_DIR) not in sys.path:
 if "cred" not in sys.modules:
     fake_cred = ModuleType("cred")
     fake_cred.DISCORD_TOKEN = "test-token"
-    fake_cred.DISCORD_CHANNEL_ID = 0
+    fake_cred.DISCORD_LIVE_TRADES_CHANNEL_ID = 0
     fake_cred.DISCORD_TEST_CHANNEL_ID = 0
     fake_cred.DISCORD_STRATEGY_REPORTING_CHANNEL_ID = 0
     fake_cred.DISCORD_CLIENT_SECRET = ""

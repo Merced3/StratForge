@@ -29,7 +29,7 @@ async def create_view(button_data):
 
 
 def _get_channel(channel_id=None):
-    target_id = channel_id or cred.DISCORD_CHANNEL_ID
+    target_id = channel_id or cred.DISCORD_LIVE_TRADES_CHANNEL_ID
     if not target_id:
         return None
     return bot.get_channel(target_id)
@@ -83,7 +83,7 @@ async def print_discord(
 ):
     message_channel = _get_channel(channel_id)
     if message_channel is None:
-        target_id = channel_id or cred.DISCORD_CHANNEL_ID
+        target_id = channel_id or cred.DISCORD_LIVE_TRADES_CHANNEL_ID
         print_log(f"Error: Could not find a channel with ID {target_id}.")
         return
 
@@ -124,7 +124,7 @@ async def print_discord(
 async def send_file_discord(file_path, retries=3, backoff_factor=1, channel_id=None):
     channel = _get_channel(channel_id)
     if channel is None:
-        target_id = channel_id or cred.DISCORD_CHANNEL_ID
+        target_id = channel_id or cred.DISCORD_LIVE_TRADES_CHANNEL_ID
         print_log(f"Could not find channel with ID {target_id}")
         return
 

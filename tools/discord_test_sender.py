@@ -6,7 +6,7 @@ Purpose:
 Channel selection:
 - --channel-id overrides everything.
 - Otherwise uses DISCORD_TEST_CHANNEL_ID in cred.py if set.
-- Falls back to DISCORD_CHANNEL_ID.
+- Falls back to DISCORD_LIVE_TRADES_CHANNEL_ID.
 
 How to get a channel ID:
 - Discord URLs look like https://discord.com/channels/<guild>/<channel>
@@ -614,10 +614,10 @@ async def main() -> None:
     channel_id = (
         args.channel_id
         or getattr(cred, "DISCORD_TEST_CHANNEL_ID", None)
-        or getattr(cred, "DISCORD_CHANNEL_ID", None)
+        or getattr(cred, "DISCORD_LIVE_TRADES_CHANNEL_ID", None)
     )
     if not channel_id:
-        raise ValueError("Channel ID is required (use --channel-id or set DISCORD_CHANNEL_ID).")
+        raise ValueError("Channel ID is required (use --channel-id or set DISCORD_LIVE_TRADES_CHANNEL_ID).")
 
     if args.econ_refresh:
         await ensure_economic_calendar_data()

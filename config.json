@@ -47,6 +47,11 @@
     "OPTION_EXPIRATION_DTE": "not specified",
     "RECORD_OPTIONS_QUOTES": false,
     "OPTIONS_QUOTES_DIR": "storage/options/quotes",
+    "STRATEGY_REPORTING": {
+        "enabled": true,
+        "use_test_channel": false,
+        "update_existing": true
+    },
     "MINS_BEFORE_MAJOR_NEWS_ORDER_CANCELATION": 20,
     "LIVE_BARS": {
         "2M": 195,

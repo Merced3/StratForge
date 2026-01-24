@@ -13,6 +13,8 @@ if "cred" not in sys.modules:
     fake_cred = ModuleType("cred")
     fake_cred.DISCORD_TOKEN = "test-token"
     fake_cred.DISCORD_CHANNEL_ID = 0
+    fake_cred.DISCORD_TEST_CHANNEL_ID = 0
+    fake_cred.DISCORD_STRATEGY_REPORTING_CHANNEL_ID = 0
     fake_cred.DISCORD_CLIENT_SECRET = ""
     fake_cred.DISCORD_APPLICATION_ID = 0
     fake_cred.DISCORD_PUBLIC_KEY = ""

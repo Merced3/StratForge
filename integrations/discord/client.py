@@ -28,14 +28,21 @@ async def create_view(button_data):
     return MyView(button_data)
 
 
-async def edit_discord_message(message_id, new_content, delete_last_message=None, file_path=None):
-    channel = bot.get_channel(cred.DISCORD_CHANNEL_ID)
+def _get_channel(channel_id=None):
+    target_id = channel_id or cred.DISCORD_CHANNEL_ID
+    if not target_id:
+        return None
+    return bot.get_channel(target_id)
+
+
+async def edit_discord_message(message_id, new_content, delete_last_message=None, file_path=None, channel_id=None):
+    channel = _get_channel(channel_id)
     if channel:
         try:
             message = await channel.fetch_message(message_id)
             await message.edit(content=new_content)
             if file_path:
-                await send_file_discord(file_path)
+                await send_file_discord(file_path, channel_id=channel_id)
         except Exception as e:
             await error_log_and_discord_message(
                 e,
@@ -50,8 +57,8 @@ async def edit_discord_message(message_id, new_content, delete_last_message=None
         print_log("Channel not found.")
 
 
-async def get_message_content(message_id, line=None):
-    channel = bot.get_channel(cred.DISCORD_CHANNEL_ID)
+async def get_message_content(message_id, line=None, channel_id=None):
+    channel = _get_channel(channel_id)
     if channel:
         try:
             message = await channel.fetch_message(message_id)
@@ -72,10 +79,12 @@ async def print_discord(
     show_print_statement=None,
     retries=3,
     backoff_factor=1,
+    channel_id=None,
 ):
-    message_channel = bot.get_channel(cred.DISCORD_CHANNEL_ID)
+    message_channel = _get_channel(channel_id)
     if message_channel is None:
-        print_log(f"Error: Could not find a channel with ID {cred.DISCORD_CHANNEL_ID}.")
+        target_id = channel_id or cred.DISCORD_CHANNEL_ID
+        print_log(f"Error: Could not find a channel with ID {target_id}.")
         return
 
     if delete_last_message:
@@ -112,10 +121,11 @@ async def print_discord(
     return None
 
 
-async def send_file_discord(file_path, retries=3, backoff_factor=1):
-    channel = bot.get_channel(cred.DISCORD_CHANNEL_ID)
+async def send_file_discord(file_path, retries=3, backoff_factor=1, channel_id=None):
+    channel = _get_channel(channel_id)
     if channel is None:
-        print_log(f"Could not find channel with ID {cred.DISCORD_CHANNEL_ID}")
+        target_id = channel_id or cred.DISCORD_CHANNEL_ID
+        print_log(f"Could not find channel with ID {target_id}")
         return
 
     for attempt in range(retries):

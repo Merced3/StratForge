@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from typing import Iterable, Optional
 
 
@@ -83,7 +83,7 @@ def format_trade_open(
 ) -> str:
     lines = [
         f"**{strategy_name}**",
-        "-----",
+        format_divider(),
         f"**Ticker Symbol:** {ticker_symbol}",
         f"**Strike Price:** {strike}",
         f"**Option Type:** {option_type}",
@@ -93,7 +93,7 @@ def format_trade_open(
     ]
     if reason:
         lines.append(f"**Reason:** {reason}")
-    lines.append("-----")
+    lines.append(format_divider())
     return "\n".join(lines)
 
 
@@ -133,7 +133,7 @@ def format_trade_close(
     avg_str = _format_price(avg_exit, precision=3)
     avg_label = f"${avg_str}" if avg_str != "n/a" else avg_str
     return (
-        "\n-----\n"
+        f"\n{format_divider()}\n"
         f"**AVG BID:**    {avg_label}\n"
         f"**TOTAL:**    {total_str}{indicator}\n"
         f"**PERCENT:**    {percent_str}"
@@ -187,13 +187,75 @@ def format_economic_news_message(
     if not grouped:
         return f"**{empty_message}**"
 
-    lines = [f"**{header}**", "-----"]
+    lines = [f"**{header}**", format_divider()]
     for time_label in _sorted_time_labels(grouped.keys()):
         lines.append(f"**{time_label}**")
         for title in grouped[time_label]:
             lines.append(f"- {title}")
         lines.append("")
     return "\n".join(lines).strip()
+
+
+def format_strategy_report(
+    strategy_name: str,
+    metrics: dict,
+    note: Optional[str] = None,
+    last_updated: Optional[str] = None,
+) -> str:
+    positions = metrics.get("positions")
+    closed = metrics.get("closed")
+    open_count = metrics.get("open")
+    realized_pnl = metrics.get("pnl_total")
+    entry_cost = metrics.get("entry_cost")
+    pnl_per_dollar = metrics.get("pnl_per_dollar")
+    expectancy = metrics.get("expectancy")
+    win_rate = metrics.get("win_rate")
+    avg_win = metrics.get("avg_win")
+    avg_loss = metrics.get("avg_loss")
+    avg_hold = metrics.get("avg_hold")
+
+    ratio_label = _format_ratio(pnl_per_dollar)
+    percent_label = _format_percent_optional(pnl_per_dollar)
+    return_line = f"{ratio_label} ({percent_label})" if ratio_label != "n/a" else "n/a"
+
+    last_updated = _format_date_label(last_updated)
+    divider = format_divider(f"*LU:*`{last_updated}`")
+    lines = [
+        f"**Strategy Report: {strategy_name}**",
+        divider,
+        f"**Trades:** {closed} closed / {open_count} open ({positions} total)",
+        f"**Realized P/L:** {_format_money(realized_pnl)}",
+        f"**Entry Cost:** {_format_money(entry_cost)}",
+        f"**Return per $1 premium:** {return_line}",
+        f"**Expectancy:** {_format_money(expectancy)} per trade",
+        f"**Win Rate:** {_format_percent_optional(win_rate)}",
+        f"**Avg Win / Loss:** {_format_money(avg_win)} / {_format_money(avg_loss)}",
+        f"**Avg Hold:** {_format_duration(avg_hold)}",
+    ]
+    if note:
+        lines.append(f"**Note:** {note}")
+    return "\n".join(lines)
+
+
+def format_divider(label: Optional[str] = None, padding: int = 12) -> str:
+    if label:
+        return f"~~{' ' * padding}~~ {label} ~~{' ' * padding}~~"
+    return f"~~{' ' * (padding * 2 + 4)}~~"
+
+
+def _format_date_label(value: Optional[str]) -> str:
+    if not value:
+        return datetime.now().strftime("%m-%d-%Y")
+    if isinstance(value, str):
+        parts = value.split("-")
+        if len(parts) == 3 and len(parts[0]) == 4:
+            try:
+                month = int(parts[1])
+                day = int(parts[2])
+                return f"{month}-{day}-{parts[0]}"
+            except ValueError:
+                return value
+    return str(value)
 
 
 def _strip_markdown(message: str) -> str:
@@ -221,6 +283,34 @@ def _format_money(value: Optional[float]) -> str:
         return "n/a"
     return f"${value:.2f}"
 
+
+def _format_ratio(value: Optional[float]) -> str:
+    if value is None:
+        return "n/a"
+    return f"{value:.2f}"
+
+
+def _format_percent_optional(value: Optional[float]) -> str:
+    if value is None:
+        return "n/a"
+    return f"{value * 100:.1f}%"
+
+
+def _format_duration(value: Optional[object]) -> str:
+    if value is None:
+        return "n/a"
+    if isinstance(value, timedelta):
+        total_seconds = int(value.total_seconds())
+        sign = "-" if total_seconds < 0 else ""
+        total_seconds = abs(total_seconds)
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        if hours:
+            return f"{sign}{hours}h{minutes:02d}m"
+        if minutes:
+            return f"{sign}{minutes}m{seconds:02d}s"
+        return f"{sign}{seconds}s"
+    return str(value)
 
 def _format_signed_money(value: Optional[float]) -> str:
     if value is None:

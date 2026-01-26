@@ -1114,5 +1114,17 @@
         "num_of_negitive_trades": 6,
         "description": "Day 1, Market was closed due too MLK day, worked on decoupling the economic calender data AND adding a discord message preview tester script in the `tools/` folder. Day 2, took 3 trades 2 looses 1 winner, each trade did not have an error which is great, ledger worked great, worked/finished the errors we did have today; polishing discord template messages, trim edge case we solved, EOD balance calculations are wrong and work now. Day 3, didn't work on program today, just focussed on the analytical planning of strategy EV evaluations, today it took 2 trades first negitive (-64%) then 2nd trade hit 200%, which was awesome, we were in that trade for a while, made $76 today. Today we had a options order for a call right after 15 minute open and lasted all the way till market closed, theta ate it up for a 100% loss, developed a little bit on the analytical side, finsished Phase 1, onto other steps. Day 5, 2 trades both negitive, last one was like the day before where it took all day and theta ate it and price target was never hit, -$62.",
         "important_message_ids": []
+    },
+    {
+        "week_number": 92,
+        "week_start_end_date": "1/26/2025-01/30/2025",
+        "start_ammount": 39138.0,
+        "end_ammount": 39104.0,
+        "total_made": -34.0,
+        "num_of_trades": 1,
+        "num_of_profitable_trades": 0,
+        "num_of_negitive_trades": 1,
+        "description": "Day 1, Data collection was good, but we had a issue at end of day reporting on the analytics, fixed that (forgot to add correct channel ID in `cred.py`), tomorrow it should send better summary and on time, I tried working on the V2 of analytics today but couldn't think of how to attack it in a non-lookahead/overfitting bias, more mental thought needs to go to this.",
+        "important_message_ids": []
     }
 ]

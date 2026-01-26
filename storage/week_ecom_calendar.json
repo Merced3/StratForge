@@ -1,64 +1,50 @@
 {
     "version": 1,
-    "week_start": "2026-01-19",
-    "week_end": "2026-01-25",
+    "week_start": "2026-01-26",
+    "week_end": "2026-02-01",
     "timezone": "America/Chicago",
     "source": "tradingeconomics",
     "events": [
         {
-            "date": "2026-01-19",
+            "date": "2026-01-26",
             "time_label": "07:30 AM",
-            "title": "Inflation Rate YoY",
-            "starts_at": "2026-01-19T07:30:00-06:00",
+            "title": "Durable Goods Orders MoM",
+            "starts_at": "2026-01-26T07:30:00-06:00",
             "source": "tradingeconomics"
         },
         {
-            "date": "2026-01-22",
+            "date": "2026-01-28",
+            "time_label": "01:00 PM",
+            "title": "Fed Interest Rate Decision",
+            "starts_at": "2026-01-28T13:00:00-06:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-01-28",
+            "time_label": "01:30 PM",
+            "title": "Fed Press Conference",
+            "starts_at": "2026-01-28T13:30:00-06:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-01-28",
+            "time_label": "08:45 AM",
+            "title": "BoC Interest Rate Decision",
+            "starts_at": "2026-01-28T08:45:00-06:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-01-28",
+            "time_label": "08:45 AM",
+            "title": "BoC Monetary Policy Report",
+            "starts_at": "2026-01-28T08:45:00-06:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-01-30",
             "time_label": "07:30 AM",
-            "title": "GDP Growth Rate QoQ Final",
-            "starts_at": "2026-01-22T07:30:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-01-22",
-            "time_label": "09:00 AM",
-            "title": "Core PCE Price Index MoM",
-            "starts_at": "2026-01-22T09:00:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-01-22",
-            "time_label": "09:00 AM",
-            "title": "Core PCE Price Index MoM",
-            "starts_at": "2026-01-22T09:00:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-01-22",
-            "time_label": "09:00 AM",
-            "title": "Personal Income MoM",
-            "starts_at": "2026-01-22T09:00:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-01-22",
-            "time_label": "09:00 AM",
-            "title": "Personal Income MoM",
-            "starts_at": "2026-01-22T09:00:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-01-22",
-            "time_label": "09:00 AM",
-            "title": "Personal Spending MoM",
-            "starts_at": "2026-01-22T09:00:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-01-22",
-            "time_label": "09:00 AM",
-            "title": "Personal Spending MoM",
-            "starts_at": "2026-01-22T09:00:00-06:00",
+            "title": "PPI MoM",
+            "starts_at": "2026-01-30T07:30:00-06:00",
             "source": "tradingeconomics"
         }
     ]

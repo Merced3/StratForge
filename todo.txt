@@ -1,11 +1,25 @@
-Branch focus: analytics setup for exit research (no live changes yet).
 Goal: maximize long-term expectancy with simple, testable rules.
 Ethos: Keep systems decoupled, simple, easy-to-change, and modular. Changes should be isolated and safe to deploy while running so one failure does not cascade.
+So that if I do want to make changes and update those changes, as its running - to other system's the other systems don't fail.
 
 Key:
     [x] = done
     [-] = in progress
     [ ] = todo
+
+Main Setup (branch)
+[-] start with 2 or 3 simple strategies: # See if we can handle multiple strategies
+    [x] ema crossover
+    [ ] candle ema break
+    [ ] object break (zone/level)
+[x] Fix EOD balance source-of-truth (start-of-day + P/L)
+    [x] Capture start-of-day balance once per trading day (avoid overwriting on restarts)
+    [x] Use trade ledger realized P/L for paper-mode EOD balance
+    [ ] Add sanity logging: ledger P/L vs Discord totals
+    [ ] Validate real-money EOD uses account balance and respects stored start-of-day
+[-] Work on Analytics + Logging Branch
+    [x] Analytics V1
+    [-] Analytics V2
 
 Analytics Setup (branch)
 [-] Define success metrics and risk limits

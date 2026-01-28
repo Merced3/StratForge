@@ -19,6 +19,7 @@ from options.trade_ledger import sum_realized_pnl_for_day
 from runtime.market_bus import MarketEventBus
 from runtime.options_trade_notifier import OptionsTradeNotifier
 from runtime.options_strategy_runner import OptionsStrategyRunner, discover_strategies
+from runtime.research_signal_runner import ResearchSignalRunner, discover_research_signals
 from runtime.strategy_reporting import send_strategy_reports
 from shared_state import print_log
 import asyncio
@@ -62,8 +63,11 @@ class OptionsRuntime:
     order_manager: OptionsOrderManager
     position_watcher: Optional[PositionWatcher] = None
     on_position_closed: Optional[Callable] = None
+    research_runner: Optional[ResearchSignalRunner] = None
 
     async def stop(self) -> None:
+        if self.research_runner:
+            self.research_runner.stop()
         self.runner.stop()
         if self.position_watcher:
             await self.position_watcher.stop()
@@ -166,6 +170,39 @@ async def start_options_runtime(
         )
         await position_watcher.start()
 
+        research_runner: Optional[ResearchSignalRunner] = None
+        if bool(read_config("RESEARCH_SIGNALS_ENABLED")):
+            research_signals = discover_research_signals()
+            if research_signals:
+                research_timeframes = read_config("RESEARCH_SIGNALS_TIMEFRAMES")
+                if not isinstance(research_timeframes, list):
+                    research_timeframes = None
+                touch_poll_secs = read_config("RESEARCH_TOUCH_POLL_SECS")
+                if touch_poll_secs is None:
+                    touch_poll_secs = 1.0
+                touch_tolerance = read_config("RESEARCH_TOUCH_TOLERANCE")
+                if touch_tolerance is None:
+                    touch_tolerance = 0.02
+                research_runner = ResearchSignalRunner(
+                    bus=market_bus,
+                    quote_service=quote_service,
+                    strategies=research_signals,
+                    expiration=expiration,
+                    selector_name="price-range-otm",
+                    max_otm=max_otm,
+                    timeframes=research_timeframes,
+                    touch_poll_secs=float(touch_poll_secs),
+                    touch_tolerance=float(touch_tolerance),
+                    logger=print_log,
+                )
+                research_runner.start()
+                print_log(
+                    f"[RESEARCH] Started {len(research_signals)} research signal(s) "
+                    f"on {research_timeframes or 'all timeframes'}."
+                )
+            else:
+                print_log("[RESEARCH] Enabled but no research signals found.")
+
         runner = OptionsStrategyRunner(
             market_bus,
             order_manager,
@@ -190,6 +227,7 @@ async def start_options_runtime(
             order_manager=order_manager,
             position_watcher=position_watcher,
             on_position_closed=notifier.on_position_closed,
+            research_runner=research_runner,
         )
     except Exception:
         await session.close()

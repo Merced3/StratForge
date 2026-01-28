@@ -22,6 +22,7 @@ If it explains how/why the system works (not just what it does), it belongs in `
   3.2 Running the Strategy Module  
   3.3 Launching the Web Dashboard  
   3.4 Development Mode vs Live Trading Mode  
+  3.5 Research analytics EOD runbook (`docs/runbooks/research-analytics-eod.md`)  
 
 4. **Architecture Overview**
   4.1 High-Level System Diagram  
@@ -29,6 +30,8 @@ If it explains how/why the system works (not just what it does), it belongs in `
   4.3 Data Flow & Storage Locations  
   4.4 See `docs/adr/` for key technical decisions and tradeoffs  
   4.5 Options subsystem study sheet (`docs/architecture/options-subsystem.md`)
+  4.6 Research analytics v2 (`docs/architecture/research-analytics-v2.md`)
+  4.7 Research analytics v2 data schema (`docs/data/research_analytics_v2.md`)
 
 5. **Data Acquisition**
   5.1 Live Market Data Sources  
@@ -56,6 +59,7 @@ If it explains how/why the system works (not just what it does), it belongs in `
   9.1 Modifying `config.json`  
   9.2 Adding/Removing Timeframes  
   9.3 Changing EMA Settings  
+  9.4 Options, research, and reporting config (`docs/configuration/options-and-research.md`)
 
 10. **Deployment**
   10.1 Local Deployment  

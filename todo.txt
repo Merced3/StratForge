@@ -1,21 +1,47 @@
-Everything I'm focusing is:
-Decoupling, I want to make this current system as simple, modular, easy to change, as possible.
-So that if I do want to make changes and update those changes, as its running - to other system's the other systems don't fail.
+Branch focus: analytics setup for exit research (no live changes yet).
+Goal: maximize long-term expectancy with simple, testable rules.
+Ethos: Keep systems decoupled, simple, easy-to-change, and modular. Changes should be isolated and safe to deploy while running so one failure does not cascade.
 
 Key:
-    [x] = done/working
-    [-] = pending/developing currently
+    [x] = done
+    [-] = in progress
+    [ ] = todo
 
-NEXT THING TO WORK ON:
-[-] start with 2 or 3 simple strategies: # See if we can handle multiple strategies
-    [x] ema crossover
-    [ ] candle ema break
-    [ ] object break (zone/level)
-[x] Fix EOD balance source-of-truth (start-of-day + P/L)
-    [x] Capture start-of-day balance once per trading day (avoid overwriting on restarts)
-    [x] Use trade ledger realized P/L for paper-mode EOD balance
-    [ ] Add sanity logging: ledger P/L vs Discord totals
-    [ ] Validate real-money EOD uses account balance and respects stored start-of-day
-[-] Work on Analytics + Logging Branch
-    [x] Analytics V1
-    [-] Analytics V2
+Analytics Setup (branch)
+[-] Define success metrics and risk limits
+    [ ] Target metrics: expectancy, win rate, avg win/loss, max drawdown, max losing streak, avg hold time
+    [ ] Risk limits: none (exploration) but track daily drawdown + streaks
+[-] Define data to record (minimal and useful)
+    [ ] Keep trade ledger as source of truth
+    [ ] Add per-trade position update log (mark price, unrealized pct, qty open)
+    [ ] Do not record full option chains by default
+[-] Cost model (use same assumptions in live + analytics)
+    [ ] Commission per contract
+    [ ] Slippage model (buy=ask, sell=bid or fixed ticks)
+[x] Analytics v1 (ledger only)
+    [x] Group by position_id
+    [x] Compute realized P/L, win rate, avg win/loss, hold time, strategy_tag
+[x] Strategy reporting (EOD)
+    [x] Strategy report template
+    [x] EOD sender (ledger-based)
+    [x] Configure dedicated strategy-reporting channel (cred)
+    [x] Confirm message IDs persist + edits (no flooding)
+[-] Analytics v2 (path based, decoupled)
+    [x] Research signal ledger (entry-only) at `storage\options\analytics\strategy_signals.jsonl`
+    [x] Research signal runner wiring behind `RESEARCH_SIGNALS_ENABLED`
+    [x] Path events: candle close + EMA/level/zone touches (deduped per candle)
+    [x] Compute per-signal path metrics (MFE/MAE, time-to-MFE/MAE)
+    [ ] Simulate simple exits on recorded paths and rank rules
+    [ ] Time-to-target and time-to-stop distributions
+
+[-] Exit policy testing (offline only)
+    [ ] Simulate 2-3 simple exit rules
+    [ ] Walk-forward split (train/test) and keep the simplest rule that holds up
+[-] Decision gate before changing live exits
+    [ ] Require N trades (start at 100) and stable out-of-sample metrics
+
+Current answers:
+- Max daily loss/drawdown: none (exploration) - still track the numbers
+- Minimum trades before changing exits: 100 (tentative)
+- Trade frequency preference: open to all
+- Hold past close: no (0DTE only for now)

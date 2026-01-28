@@ -8,18 +8,6 @@
         "5M",
         "15M"
     ],
-    "ACCOUNT_ORDER_PERCENTAGE": 0.01,
-    "TAKE_PROFIT_PERCENTAGES": [
-        20,
-        50,
-        100,
-        200,
-        300
-    ],
-    "STOP_LOSS": [
-        "SENTIMENT",
-        2
-    ],
     "NUM_OUT_OF_MONEY": 20,
     "GET_PDHL": true,
     "CANDLE_BUFFER": 1,
@@ -52,6 +40,14 @@
         "use_test_channel": false,
         "update_existing": true
     },
+    "RESEARCH_SIGNALS_ENABLED": true,
+    "RESEARCH_SIGNALS_TIMEFRAMES": [
+        "2M",
+        "5M",
+        "15M"
+    ],
+    "RESEARCH_TOUCH_POLL_SECS": 1.0,
+    "RESEARCH_TOUCH_TOLERANCE": 0.02,
     "MINS_BEFORE_MAJOR_NEWS_ORDER_CANCELATION": 20,
     "LIVE_BARS": {
         "2M": 195,

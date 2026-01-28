@@ -454,11 +454,13 @@ relying on Discord or in-memory state.
 ### Pattern H: Auto-record quotes during live runs
 
 Enable recording in `config.json` to capture the live chain without running a
-second quote hub:
+second quote hub (default is false):
 
-```bash
-RECORD_OPTIONS_QUOTES = true
-OPTIONS_QUOTES_DIR = "storage/options/quotes"
+```json
+{
+  "RECORD_OPTIONS_QUOTES": true,
+  "OPTIONS_QUOTES_DIR": "storage/options/quotes"
+}
 ```
 
 When enabled, `main.py` wraps the provider with `RecordingOptionsProvider` and

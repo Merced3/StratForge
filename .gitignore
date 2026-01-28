@@ -26,3 +26,4 @@ storage/data/
 storage/options/quotes/
 storage/options/trade_events.jsonl
 storage/options/strategy_report_message_ids.json
+storage/options/analytics/

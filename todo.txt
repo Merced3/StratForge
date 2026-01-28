@@ -1,6 +1,6 @@
 Branch focus: analytics setup for exit research (no live changes yet).
-Goal: maximize long-term expectancy with controlled drawdown and simple, testable rules.
-Ethos: Keep systems decoupled, simple, and modular. Changes should be isolated and safe to deploy while running so one failure does not cascade.
+Goal: maximize long-term expectancy with simple, testable rules.
+Ethos: Keep systems decoupled, simple, easy-to-change, and modular. Changes should be isolated and safe to deploy while running so one failure does not cascade.
 
 Key:
     [x] = done
@@ -21,15 +21,19 @@ Analytics Setup (branch)
 [x] Analytics v1 (ledger only)
     [x] Group by position_id
     [x] Compute realized P/L, win rate, avg win/loss, hold time, strategy_tag
-[-] Strategy reporting (EOD)
+[x] Strategy reporting (EOD)
     [x] Strategy report template
     [x] EOD sender (ledger-based)
     [x] Configure dedicated strategy-reporting channel (cred)
-    [ ] Confirm message IDs persist + edits (no flooding)
-    [ ] Validate reporting on live data (100+ trades, per-strategy totals)
-[-] Analytics v2 (path based)
-    [ ] MFE/MAE per trade
+    [x] Confirm message IDs persist + edits (no flooding)
+[-] Analytics v2 (path based, decoupled)
+    [x] Research signal ledger (entry-only) at `storage\options\analytics\strategy_signals.jsonl`
+    [x] Research signal runner wiring behind `RESEARCH_SIGNALS_ENABLED`
+    [x] Path events: candle close + EMA/level/zone touches (deduped per candle)
+    [x] Compute per-signal path metrics (MFE/MAE, time-to-MFE/MAE)
+    [ ] Simulate simple exits on recorded paths and rank rules
     [ ] Time-to-target and time-to-stop distributions
+
 [-] Exit policy testing (offline only)
     [ ] Simulate 2-3 simple exit rules
     [ ] Walk-forward split (train/test) and keep the simplest rule that holds up
@@ -37,7 +41,7 @@ Analytics Setup (branch)
     [ ] Require N trades (start at 100) and stable out-of-sample metrics
 
 Current answers:
-- Max daily loss/drawdown: none (exploration) — still track the numbers
+- Max daily loss/drawdown: none (exploration) - still track the numbers
 - Minimum trades before changing exits: 100 (tentative)
 - Trade frequency preference: open to all
 - Hold past close: no (0DTE only for now)

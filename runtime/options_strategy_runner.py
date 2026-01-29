@@ -205,6 +205,12 @@ class OptionsStrategyRunner:
         if self._logger:
             self._logger(message)
 
+    def _forget_position(self, position_id: str) -> None:
+        for name, position in list(self._positions.items()):
+            if position.position_id == position_id:
+                self._positions.pop(name, None)
+                return
+
     def _dispatch_hook(
         self,
         hook: Optional[Callable[[Position, Optional[OrderSubmitResult], str, Optional[str]], object]],
@@ -259,6 +265,10 @@ class OptionsStrategyRunner:
                         action.reason or "close",
                         action.timeframe,
                     )
+                    if position.status == "closed" or position.quantity_open <= 0:
+                        self._forget_position(action.position_id)
+                else:
+                    self._forget_position(action.position_id)
                 continue
             if action.action == "trim":
                 if action.quantity is None or action.quantity <= 0:
@@ -405,7 +415,11 @@ def discover_strategies(root: Optional[Path] = None) -> List[object]:
         if not callable(build):
             continue
         try:
-            strategies.append(build())
+            built = build()
         except Exception:
             continue
+        if isinstance(built, (list, tuple)):
+            strategies.extend([item for item in built if item is not None])
+        elif built is not None:
+            strategies.append(built)
     return strategies

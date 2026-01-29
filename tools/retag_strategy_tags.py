@@ -84,6 +84,26 @@ def _parse_map(values: Iterable[str]) -> Dict[str, str]:
     return mapping
 
 
+def _normalize_timeframe(value: object) -> str:
+    if value is None:
+        return ""
+    return str(value).strip().lower()
+
+
+def _retag_from_timeframe(rows: List[dict], base_tag: str) -> Tuple[List[dict], int]:
+    changed = 0
+    for row in rows:
+        timeframe = _normalize_timeframe(row.get("timeframe"))
+        if not timeframe:
+            continue
+        tag = row.get("strategy_tag")
+        if tag is not None and not str(tag).startswith(base_tag):
+            continue
+        row["strategy_tag"] = f"{base_tag}-{timeframe}"
+        changed += 1
+    return rows, changed
+
+
 def _read_jsonl(path: Path) -> List[dict]:
     rows: List[dict] = []
     if not path.exists():
@@ -136,11 +156,20 @@ def _backup_path(path: Path) -> Path:
     return path.with_suffix(path.suffix + ".bak")
 
 
-def _process_path(path: Path, mapping: Dict[str, str], *, inplace: bool) -> Tuple[int, int, Path]:
+def _process_path(
+    path: Path,
+    mapping: Dict[str, str],
+    *,
+    inplace: bool,
+    timeframe_base: str = "",
+) -> Tuple[int, int, Path]:
     rows = _read_jsonl(path)
     if not rows:
         return 0, 0, path
-    rows, changed = _retag_rows(rows, mapping)
+    if timeframe_base:
+        rows, changed = _retag_from_timeframe(rows, timeframe_base)
+    else:
+        rows, changed = _retag_rows(rows, mapping)
     if inplace:
         backup = _backup_path(path)
         if path.exists():
@@ -163,6 +192,11 @@ def main() -> int:
         help="Mapping in form old=new (repeatable).",
     )
     parser.add_argument(
+        "--tag-from-timeframe",
+        default="",
+        help="Base tag to apply using each row's timeframe (ex: ema-crossover).",
+    )
+    parser.add_argument(
         "--paths",
         nargs="*",
         default=None,
@@ -176,8 +210,8 @@ def main() -> int:
     args = parser.parse_args()
 
     mapping = _parse_map(args.map)
-    if not mapping:
-        print("[RETAG] No valid mappings provided. Use --map old=new.")
+    if not mapping and not args.tag_from_timeframe:
+        print("[RETAG] No valid mappings provided. Use --map old=new or --tag-from-timeframe.")
         return 1
 
     paths = _resolve_paths(args.paths) if args.paths else list(DEFAULT_PATHS)
@@ -185,13 +219,21 @@ def main() -> int:
         print("[RETAG] No paths to process.")
         return 1
 
-    print(f"[RETAG] Mapping: {mapping}")
+    if args.tag_from_timeframe:
+        print(f"[RETAG] Tag-from-timeframe base: {args.tag_from_timeframe}")
+    else:
+        print(f"[RETAG] Mapping: {mapping}")
     print(f"[RETAG] Mode: {'in-place' if args.in_place else 'write new files'}")
 
     total_rows = 0
     total_changed = 0
     for path in paths:
-        rows, changed, out_path = _process_path(path, mapping, inplace=args.in_place)
+        rows, changed, out_path = _process_path(
+            path,
+            mapping,
+            inplace=args.in_place,
+            timeframe_base=args.tag_from_timeframe,
+        )
         total_rows += rows
         total_changed += changed
         label = str(path)

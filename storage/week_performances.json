@@ -1119,12 +1119,12 @@
         "week_number": 92,
         "week_start_end_date": "1/26/2025-01/30/2025",
         "start_ammount": 39138.0,
-        "end_ammount": 39393.0,
-        "total_made": 255.0,
-        "num_of_trades": 15,
-        "num_of_profitable_trades": 5,
-        "num_of_negitive_trades": 10,
-        "description": "Day 1, Data collection was good, but we had a issue at end of day reporting on the analytics, fixed that (forgot to add correct channel ID in `cred.py`), tomorrow it should send better summary and on time, I tried working on the V2 of analytics today but couldn't think of how to attack it in a non-lookahead/overfitting bias, more mental thought needs to go to this. Day 2, trading engine analytical system V2 is practically done, all the triggers and points for data collection have been setup in the test branch and can manually calculate MFE/MAE but im trying to figure out how to automate that part, data collection today was good and live trading strategy reporting was working today, should keep on working for the forsee-able future. Day 3, Finished the V2 of data collection of Analytics system, need full days run before saying if this V2 works or not (this is from the night before market open), market session has ran and data looks good, alot more data then i thought, alot to parse through for tomorrow or the next day, todays live trades were bad, 2 negitive trades, lost -64$, but reporting of stats seems to be working REALLY good. Day 4, took 11 trades today and by far the best trading day since a while, data collection was good, made $342 - 2 trades hit 200%.",
+        "end_ammount": 39284.0,
+        "total_made": 146.0,
+        "num_of_trades": 36,
+        "num_of_profitable_trades": 9,
+        "num_of_negitive_trades": 27,
+        "description": "Day 1, Data collection was good, but we had a issue at end of day reporting on the analytics, fixed that (forgot to add correct channel ID in `cred.py`), tomorrow it should send better summary and on time, I tried working on the V2 of analytics today but couldn't think of how to attack it in a non-lookahead/overfitting bias, more mental thought needs to go to this. Day 2, trading engine analytical system V2 is practically done, all the triggers and points for data collection have been setup in the test branch and can manually calculate MFE/MAE but im trying to figure out how to automate that part, data collection today was good and live trading strategy reporting was working today, should keep on working for the forsee-able future. Day 3, Finished the V2 of data collection of Analytics system, need full days run before saying if this V2 works or not (this is from the night before market open), market session has ran and data looks good, alot more data then i thought, alot to parse through for tomorrow or the next day, todays live trades were bad, 2 negitive trades, lost -64$, but reporting of stats seems to be working REALLY good. Day 4, took 11 trades today and by far the best trading day since a while, data collection was good, made $342 - 2 trades hit 200%. Day 5, we had ALOT of trades, 21 trades, 17 looser - 3 b/e - 1 winner, were getting really good data, i don't want to mess with anything just yet, lost -$109 today but got good data, today was really choppy.",
         "important_message_ids": [1465923152436793486]
     }
 ]

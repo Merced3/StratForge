@@ -1131,12 +1131,12 @@
         "week_number": 93,
         "week_start_end_date": "02/02/2025-02/06/2025",
         "start_ammount": 39284.0,
-        "end_ammount": 39416.0,
-        "total_made": 132.0,
-        "num_of_trades": 21,
-        "num_of_profitable_trades": 3,
-        "num_of_negitive_trades": 18,
-        "description": "Day 1, data collection was good, we have 2 strategies running and more to come, we had 21 trades today and 3 were winners, really it was 2 that were the majority but today was still a profitable day with the 18 losses, made $132 off of $679, awesome! I then looked at EOD research calculations and i made a rookie mistake, read discord message id `1468059506989600889` and I restarted all V1/V2 data so I don't have to messs with anything analytical logging manually, i tried that the first time, it didn't work, restarted all of `v1/v2` Analytics recorded data, starting clean.",
+        "end_ammount": 39731.0,
+        "total_made": 447.0,
+        "num_of_trades": 35,
+        "num_of_profitable_trades": 9,
+        "num_of_negitive_trades": 26,
+        "description": "Day 1, data collection was good, we have 2 strategies running and more to come, we had 21 trades today and 3 were winners, really it was 2 that were the majority but today was still a profitable day with the 18 losses, made $132 off of $679, awesome! I then looked at EOD research calculations and i made a rookie mistake, read discord message id `1468059506989600889` and I restarted all V1/V2 data so I don't have to messs with anything analytical logging manually, i tried that the first time, it didn't work, restarted all of `v1/v2` Analytics recorded data, starting clean. Day 2, data collection was alright, we had a options hub hick-up, 502/504 bad gateway, quickly got back to it's feet with in 5 mins, had 14 trades today, made $315 off of $606 BP, insane, 3 trades that hit 200+%, 1 trade hit 329%, off of the 14 trades 6 were winners, 8 were loosers - small loosers.",
         "important_message_ids": [1468059506989600889]
     }
 ]

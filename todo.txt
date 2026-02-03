@@ -45,7 +45,8 @@ Analytics Setup (branch)
     [x] Research signal runner wiring behind `RESEARCH_SIGNALS_ENABLED`
     [x] Path events: candle close + EMA/level/zone touches (deduped per candle)
     [x] Compute per-signal path metrics (MFE/MAE, time-to-MFE/MAE)
-    [ ] Simulate simple exits on recorded paths and rank rules
+    [-] Simulate simple exits on recorded paths and rank rules
+    [x] Add analytics reset tool for clean V1/V2 data wipes (backups + dry-run)
     [ ] Time-to-target and time-to-stop distributions
 
 [-] Exit policy testing (offline only)

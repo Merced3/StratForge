@@ -1,8 +1,0 @@
-{
-  "rules": [
-    {"name": "tp30_sl30", "type": "tp_sl", "tp_pct": 0.30, "sl_pct": -0.30},
-    {"name": "tp50_sl30", "type": "tp_sl", "tp_pct": 0.50, "sl_pct": -0.30},
-    {"name": "exit_ema_touch", "type": "touch", "event_prefixes": ["ema:"]},
-    {"name": "exit_level_zone_touch", "type": "touch", "event_prefixes": ["level:", "zone:"]}
-  ]
-}

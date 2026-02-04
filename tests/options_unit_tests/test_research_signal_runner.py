@@ -130,3 +130,48 @@ async def test_process_touches_records_events(monkeypatch):
 
     keys = sorted({event.event_key for event in captured})
     assert keys == ["ema:13", "level:100.00", "zone:99.00-101.00"]
+
+
+async def test_signal_tags_include_timeframe(monkeypatch):
+    captured = []
+
+    def _capture(event, logger=None):
+        captured.append(event)
+
+    def _fake_read_config(key: str):
+        if key == "STRATEGY_TAG_INCLUDE_TIMEFRAME":
+            return True
+        return None
+
+    monkeypatch.setattr(rsr, "record_research_signal", _capture)
+    monkeypatch.setattr(rsr, "read_config", _fake_read_config)
+
+    contract = OptionContract(symbol="SPY", option_type="call", strike=600.0, expiration="2026-01-27")
+    quote = OptionQuote(
+        contract=contract,
+        bid=0.95,
+        ask=1.05,
+        last=1.00,
+        volume=None,
+        open_interest=None,
+        updated_at=datetime.now(timezone.utc),
+    )
+    runner = rsr.ResearchSignalRunner(
+        bus=MarketEventBus(),
+        quote_service=DummyQuoteService(quote),
+        strategies=[],
+        expiration="2026-01-27",
+    )
+    context = ResearchContext(
+        symbol="SPY",
+        timeframe="2M",
+        candle={"close": 600.0},
+        ema_history=[],
+        timestamp=datetime.now(timezone.utc),
+    )
+    signal = ResearchSignal(direction="call", reason="test")
+
+    await runner._record_signal(DummyStrategy(), signal, context, runner.quote_service.get_snapshot())
+
+    assert len(captured) == 1
+    assert captured[0].strategy_tag == "ema-crossover-2m"

@@ -40,6 +40,7 @@
         "use_test_channel": false,
         "update_existing": true
     },
+    "STRATEGY_TAG_INCLUDE_TIMEFRAME": true,
     "RESEARCH_SIGNALS_ENABLED": true,
     "RESEARCH_SIGNALS_TIMEFRAMES": [
         "2M",

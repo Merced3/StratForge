@@ -78,7 +78,7 @@ class CandleEmaBreakStrategy:
         if not self._pending_stop or not updates:
             return None
         update = updates[0]
-        if update.strategy_tag and update.strategy_tag != self.name:
+        if update.strategy_tag and not _tag_matches(self.name, update.strategy_tag):
             return None
         self._pending_stop = False
         self._active_direction = None
@@ -121,6 +121,14 @@ def _crossed_up(open_price: float, close_price: float, ema_value: float) -> bool
 
 def _crossed_down(open_price: float, close_price: float, ema_value: float) -> bool:
     return open_price >= ema_value > close_price
+
+
+def _tag_matches(base: str, tag: Optional[str]) -> bool:
+    if not tag:
+        return False
+    if tag == base:
+        return True
+    return tag.startswith(f"{base}-")
 
 
 def build_strategy() -> object:

@@ -17,6 +17,7 @@ from paths import CURRENT_OBJECTS_PATH, get_ema_path
 from runtime.market_bus import CandleCloseEvent, MarketEventBus
 from shared_state import price_lock, safe_read_json
 from strategies_research.types import ResearchContext, ResearchSignal
+from utils.json_utils import read_config
 from utils.timezone import NY_TZ
 
 
@@ -100,6 +101,7 @@ class ResearchSignalRunner:
         self._touch_task: Optional[asyncio.Task] = None
         self._touch_stop = asyncio.Event()
         self._touch_seen: Dict[str, Dict[str, str]] = {}
+        self._tag_include_timeframe = _read_tag_include_timeframe()
 
     def start(self) -> None:
         if self._listener_id is not None:
@@ -162,6 +164,7 @@ class ResearchSignalRunner:
         if underlying is None:
             return
         name = getattr(strategy, "name", strategy.__class__.__name__)
+        strategy_tag = _format_strategy_tag(name, context.timeframe, self._tag_include_timeframe)
         request = SelectionRequest(
             symbol=context.symbol,
             option_type=direction,
@@ -185,7 +188,7 @@ class ResearchSignalRunner:
             ts=ts,
             event="signal",
             signal_id=signal_id,
-            strategy_tag=name,
+            strategy_tag=strategy_tag,
             timeframe=context.timeframe,
             symbol=quote.contract.symbol,
             option_type=quote.contract.option_type,
@@ -203,7 +206,7 @@ class ResearchSignalRunner:
         record_research_signal(event, logger=self._log)
         self._active_signals[signal_id] = ActiveSignal(
             signal_id=signal_id,
-            strategy_tag=name,
+            strategy_tag=strategy_tag,
             timeframe=context.timeframe,
             symbol=quote.contract.symbol,
             contract_key=quote.contract.key,
@@ -213,7 +216,7 @@ class ResearchSignalRunner:
             variant=signal.variant,
         )
         self._log(
-            f"[RESEARCH] {name} {direction} {quote.contract.key} @ {entry_mark:.2f} "
+            f"[RESEARCH] {strategy_tag} {direction} {quote.contract.key} @ {entry_mark:.2f} "
             f"({context.timeframe}: {signal.reason})"
         )
 
@@ -430,6 +433,21 @@ def _normalize_signals(result: object) -> List[ResearchSignal]:
     if isinstance(result, (list, tuple)):
         return [item for item in result if isinstance(item, ResearchSignal)]
     return []
+
+
+def _read_tag_include_timeframe() -> bool:
+    raw = read_config("STRATEGY_TAG_INCLUDE_TIMEFRAME")
+    return True if raw is None else bool(raw)
+
+
+def _format_strategy_tag(name: str, timeframe: Optional[str], include_timeframe: bool) -> str:
+    if not include_timeframe or not timeframe:
+        return name
+    tf = str(timeframe).strip().lower()
+    lowered = str(name).lower()
+    if lowered.endswith(f"-{tf}"):
+        return name
+    return f"{name}-{tf}"
 
 
 def _entry_mark(quote: OptionQuote) -> Optional[float]:

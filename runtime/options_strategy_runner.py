@@ -16,12 +16,14 @@ from paths import get_ema_path
 from runtime.market_bus import CandleCloseEvent, MarketEventBus
 from shared_state import safe_read_json
 from strategies.options.types import PositionAction, StrategyContext, StrategySignal
+from utils.json_utils import read_config
 
 
 @dataclass
 class StrategyPosition:
     position_id: str
     direction: str
+    strategy_tag: str
 
 
 class EmaSnapshotCache:
@@ -81,6 +83,7 @@ class OptionsStrategyRunner:
         self._positions: Dict[str, StrategyPosition] = {}
         self._ema_cache = EmaSnapshotCache(logger=logger)
         self._lock = asyncio.Lock()
+        self._tag_include_timeframe = _read_tag_include_timeframe()
 
     def start(self) -> None:
         if self._listener_id is not None:
@@ -119,9 +122,6 @@ class OptionsStrategyRunner:
     async def _handle_position_updates(self, updates: List[PositionUpdate]) -> None:
         if not updates:
             return
-        updates_by_tag: Dict[Optional[str], List[PositionUpdate]] = {}
-        for update in updates:
-            updates_by_tag.setdefault(update.strategy_tag, []).append(update)
         actions: List[PositionAction] = []
         async with self._lock:
             for strategy in self._strategies:
@@ -129,7 +129,7 @@ class OptionsStrategyRunner:
                 if handler is None:
                     continue
                 name = getattr(strategy, "name", strategy.__class__.__name__)
-                scoped = updates_by_tag.get(name, [])
+                scoped = [update for update in updates if _tag_matches(name, update.strategy_tag)]
                 if not scoped:
                     continue
                 actions.extend(await self._resolve_position_actions(handler, scoped, name))
@@ -147,7 +147,9 @@ class OptionsStrategyRunner:
             return
 
         name = getattr(strategy, "name", strategy.__class__.__name__)
-        active = self._positions.get(name)
+        strategy_tag = _format_strategy_tag(name, context.timeframe, self._tag_include_timeframe)
+        key = _position_key(name, context.timeframe, self._tag_include_timeframe)
+        active = self._positions.get(key)
         if active and active.direction == direction:
             return
 
@@ -162,7 +164,7 @@ class OptionsStrategyRunner:
                     f"flip to {direction}: {signal.reason}",
                     context.timeframe,
                 )
-            self._positions.pop(name, None)
+            self._positions.pop(key, None)
 
         underlying = context.candle.get("close")
         if underlying is None:
@@ -181,14 +183,15 @@ class OptionsStrategyRunner:
                 request,
                 selector_name=self._selector_name,
                 quantity=self._order_quantity,
-                strategy_tag=name,
+                strategy_tag=strategy_tag,
             )
         except Exception as exc:
             self._log(f"[STRATEGY] {name} failed to open position: {exc}")
             return
-        self._positions[name] = StrategyPosition(
+        self._positions[key] = StrategyPosition(
             position_id=result.position_id,
             direction=direction,
+            strategy_tag=strategy_tag,
         )
         opened_position = self._order_manager.get_position(result.position_id)
         if opened_position:
@@ -199,7 +202,9 @@ class OptionsStrategyRunner:
                 signal.reason,
                 context.timeframe,
             )
-        self._log(f"[STRATEGY] {name} opened {direction} position {result.position_id} ({signal.reason})")
+        self._log(
+            f"[STRATEGY] {strategy_tag} opened {direction} position {result.position_id} ({signal.reason})"
+        )
 
     def _log(self, message: str) -> None:
         if self._logger:
@@ -394,6 +399,33 @@ def _normalize_position_actions(result: object) -> List[PositionAction]:
     if isinstance(result, (list, tuple)):
         return [item for item in result if isinstance(item, PositionAction)]
     return []
+
+
+def _read_tag_include_timeframe() -> bool:
+    raw = read_config("STRATEGY_TAG_INCLUDE_TIMEFRAME")
+    return True if raw is None else bool(raw)
+
+
+def _format_strategy_tag(name: str, timeframe: Optional[str], include_timeframe: bool) -> str:
+    if not include_timeframe or not timeframe:
+        return name
+    tf = str(timeframe).strip().lower()
+    lowered = str(name).lower()
+    if lowered.endswith(f"-{tf}"):
+        return name
+    return f"{name}-{tf}"
+
+
+def _position_key(name: str, timeframe: Optional[str], include_timeframe: bool) -> str:
+    return _format_strategy_tag(name, timeframe, include_timeframe)
+
+
+def _tag_matches(base: str, tag: Optional[str]) -> bool:
+    if not tag:
+        return False
+    if tag == base:
+        return True
+    return tag.startswith(f"{base}-")
 
 
 def discover_strategies(root: Optional[Path] = None) -> List[object]:

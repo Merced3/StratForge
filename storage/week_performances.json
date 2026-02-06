@@ -1131,12 +1131,12 @@
         "week_number": 93,
         "week_start_end_date": "02/02/2025-02/06/2025",
         "start_ammount": 39284.0,
-        "end_ammount": 39739.0,
-        "total_made": 455.0,
-        "num_of_trades": 53,
-        "num_of_profitable_trades": 12,
-        "num_of_negitive_trades": 41,
-        "description": "Day 1, data collection was good, we have 2 strategies running and more to come, we had 21 trades today and 3 were winners, really it was 2 that were the majority but today was still a profitable day with the 18 losses, made $132 off of $679, awesome! I then looked at EOD research calculations and i made a rookie mistake, read discord message id `1468059506989600889` and I restarted all V1/V2 data so I don't have to messs with anything analytical logging manually, i tried that the first time, it didn't work, restarted all of `v1/v2` Analytics recorded data, starting clean. Day 2, data collection was alright, we had a options hub hick-up, 502/504 bad gateway, quickly got back to it's feet with in 5 mins, had 14 trades today, made $315 off of $606 BP, insane, 3 trades that hit 200+%, 1 trade hit 329%, off of the 14 trades 6 were winners, 8 were loosers - small loosers, I also removed all previous data because I think I finally solved the analytics naming issue, we will see for tomorrow. Day 3, 18 trades, 3 winners, 15 loosers, today was break even gained $8, was mainly a choppy day. ",
+        "end_ammount": 39765.0,
+        "total_made": 481.0,
+        "num_of_trades": 68,
+        "num_of_profitable_trades": 15,
+        "num_of_negitive_trades": 53,
+        "description": "Day 1, data collection was good, we have 2 strategies running and more to come, we had 21 trades today and 3 were winners, really it was 2 that were the majority but today was still a profitable day with the 18 losses, made $132 off of $679, awesome! I then looked at EOD research calculations and i made a rookie mistake, read discord message id `1468059506989600889` and I restarted all V1/V2 data so I don't have to messs with anything analytical logging manually, i tried that the first time, it didn't work, restarted all of `v1/v2` Analytics recorded data, starting clean. Day 2, data collection was alright, we had a options hub hick-up, 502/504 bad gateway, quickly got back to it's feet with in 5 mins, had 14 trades today, made $315 off of $606 BP, insane, 3 trades that hit 200+%, 1 trade hit 329%, off of the 14 trades 6 were winners, 8 were loosers - small loosers, I also removed all previous data because I think I finally solved the analytics naming issue, we will see for tomorrow. Day 3, 18 trades, 3 winners, 15 loosers, today was break even gained $8, was mainly a choppy day. Day 4, today was a choppy day just like yestarday, 15 trades, 3 profitable, 12 negitive, made 26$ amazing how im only running 2 very simple trend trading strategies, used $607 BP.",
         "important_message_ids": [1468059506989600889]
     }
 ]

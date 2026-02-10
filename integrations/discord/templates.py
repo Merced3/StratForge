@@ -159,11 +159,13 @@ def format_day_performance(
     formatted = [_format_trade_summary_line(trade) for trade in trades]
     formatted = [line for line in formatted if line]
     if not formatted:
+        trades_header = "All Trades:"
         trades_str = "No trades today."
     else:
+        trades_header = f"All Trades ({len(formatted)}):"
         trades_str = "\n".join(formatted)
     return f"""
-All Trades:
+{trades_header}
 {trades_str}
 
 Total BP Used Today:

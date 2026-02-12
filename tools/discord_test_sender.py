@@ -45,6 +45,11 @@ Usage (choose exactly one message source):
    python tools/discord_test_sender.py --trade-thread --trade-thread-json path\\to\\trade_thread.json
    python tools/discord_test_sender.py --trade-thread --trade-thread-inline '{"trade-open":{"strategy_name":"EMA Crossover"}}'
 
+10) Strategy reports (from trade ledger):
+   python tools/discord_test_sender.py --strategy-reports
+   python tools/discord_test_sender.py --strategy-reports --strategy-tag candle-ema-break
+   python tools/discord_test_sender.py --strategy-reports --ledger-path storage\\options\\trade_events.jsonl
+
 Template names:
 - trade-open
 - trade-add
@@ -79,11 +84,15 @@ from integrations.economic_calendar import EconomicCalendarService, ensure_econo
 from integrations.discord.templates import (
     append_trade_update,
     format_day_performance,
+    format_strategy_report,
     format_trade_add,
     format_trade_close,
     format_trade_open,
     format_trade_trim,
 )
+from paths import OPTIONS_TRADE_LEDGER_PATH
+from runtime.strategy_reporting import _load_strategy_metadata, _resolve_metadata
+from tools.analytics_trade_ledger import compute_metrics, load_positions
 
 TEMPLATE_DEFAULTS = {
     "trade-open": {
@@ -175,6 +184,29 @@ def _parse_args() -> argparse.Namespace:
         default=None,
         help="Override econ message date (YYYY-MM-DD).",
     )
+    parser.add_argument(
+        "--strategy-reports",
+        action="store_true",
+        help="Send strategy reports built from the options trade ledger.",
+    )
+    parser.add_argument(
+        "--strategy-tag",
+        type=str,
+        default=None,
+        help="Filter strategy reports by exact tag or tag prefix.",
+    )
+    parser.add_argument(
+        "--ledger-path",
+        type=str,
+        default=None,
+        help="Override trade ledger path for strategy reports.",
+    )
+    parser.add_argument(
+        "--trading-day",
+        type=str,
+        default=None,
+        help="Override report last-updated date (YYYY-MM-DD).",
+    )
     parser.add_argument("--file", type=str, default=None, help="Optional file to attach.")
     parser.add_argument("--dry-run", action="store_true", help="Print the message without sending.")
     parser.add_argument("--timeout", type=float, default=30.0, help="Seconds to wait before aborting.")
@@ -189,9 +221,12 @@ def _validate_args(args: argparse.Namespace) -> None:
         bool(args.template),
         bool(args.econ),
         bool(args.trade_thread),
+        bool(args.strategy_reports),
     ]
     if sum(sources) != 1:
-        raise ValueError("Choose exactly one: --message, --message-file, --template, --econ, or --trade-thread.")
+        raise ValueError(
+            "Choose exactly one: --message, --message-file, --template, --econ, --trade-thread, or --strategy-reports."
+        )
     if args.econ_refresh and not args.econ:
         raise ValueError("--econ-refresh only applies when using --econ.")
     if args.econ_date and not args.econ:
@@ -208,6 +243,12 @@ def _validate_args(args: argparse.Namespace) -> None:
         raise ValueError("--trade-thread-inline requires --trade-thread.")
     if args.trade_thread_json and args.trade_thread_inline:
         raise ValueError("Use only one of --trade-thread-json or --trade-thread-inline.")
+    if args.strategy_tag and not args.strategy_reports:
+        raise ValueError("--strategy-tag only applies when using --strategy-reports.")
+    if args.ledger_path and not args.strategy_reports:
+        raise ValueError("--ledger-path only applies when using --strategy-reports.")
+    if args.trading_day and not args.strategy_reports:
+        raise ValueError("--trading-day only applies when using --strategy-reports.")
 
 
 def _load_message(args: argparse.Namespace) -> str:
@@ -216,6 +257,8 @@ def _load_message(args: argparse.Namespace) -> str:
         return service.build_daily_message(now=_parse_econ_datetime(args.econ_date))
     if args.trade_thread:
         raise ValueError("Trade thread uses a dedicated flow; message is built during send.")
+    if args.strategy_reports:
+        raise ValueError("Strategy reports use a dedicated flow; message is built during send.")
 
     if args.template:
         inline = _load_template_inline(args.template_inline)
@@ -227,7 +270,7 @@ def _load_message(args: argparse.Namespace) -> str:
     if args.message:
         return args.message
 
-    raise ValueError("Provide --message, --message-file, --template, or --econ.")
+    raise ValueError("Provide --message, --message-file, --template, --econ, --trade-thread, or --strategy-reports.")
 
 
 def _load_template_message(args: argparse.Namespace, inline_overrides: Optional[dict[str, Any]] = None) -> str:
@@ -462,6 +505,46 @@ def _parse_econ_datetime(raw: Optional[str]) -> Optional[datetime]:
     return datetime.combine(day, time(hour=12))
 
 
+def _matches_strategy_tag(tag: str, filter_tag: str) -> bool:
+    if tag == filter_tag:
+        return True
+    return tag.startswith(f"{filter_tag}-")
+
+
+def _build_strategy_reports(args: argparse.Namespace) -> list[str]:
+    ledger_path = Path(args.ledger_path) if args.ledger_path else OPTIONS_TRADE_LEDGER_PATH
+    if not ledger_path.exists():
+        raise ValueError(f"Ledger not found: {ledger_path}")
+
+    positions = load_positions(ledger_path)
+    if not positions:
+        return []
+
+    by_tag: dict[str, list] = {}
+    for position in positions:
+        tag = position.strategy_tag or "unknown"
+        by_tag.setdefault(tag, []).append(position)
+
+    metadata = _load_strategy_metadata()
+    messages: list[str] = []
+    for tag in sorted(by_tag.keys()):
+        if args.strategy_tag and not _matches_strategy_tag(tag, args.strategy_tag):
+            continue
+        metrics = compute_metrics(by_tag[tag])
+        meta = _resolve_metadata(tag, metadata)
+        message = format_strategy_report(
+            tag,
+            metrics,
+            description=meta.get("description"),
+            last_updated=args.trading_day,
+            assessment=meta.get("assessment"),
+            enabled=meta.get("enabled"),
+            config_summary=meta.get("config_summary"),
+        )
+        messages.append(message)
+    return messages
+
+
 async def _send_message(
     channel_id: int,
     message: str,
@@ -492,6 +575,66 @@ async def _send_message(
                 await channel.send(message)
             if debug:
                 print("[discord-test] Message sent.")
+        except discord.NotFound:
+            print(f"Channel not found for ID {channel_id}.")
+        except discord.Forbidden as exc:
+            print(f"Forbidden: {exc}")
+        except discord.HTTPException as exc:
+            print(f"Discord API error: {exc}")
+        finally:
+            await client.close()
+
+    @client.event
+    async def on_ready() -> None:
+        if debug:
+            print(f"[discord-test] Logged in as {client.user}.")
+        await _deliver()
+
+    if debug:
+        print("[discord-test] Connecting to Discord...")
+    try:
+        await asyncio.wait_for(client.start(cred.DISCORD_TOKEN), timeout=timeout)
+    except asyncio.TimeoutError:
+        print(f"[discord-test] Timeout after {timeout:.0f}s waiting for send.")
+        await client.close()
+    except discord.LoginFailure as exc:
+        print(f"[discord-test] Login failed: {exc}")
+        await client.close()
+    except Exception as exc:
+        print(f"[discord-test] Discord client error: {exc}")
+        await client.close()
+    finally:
+        await asyncio.sleep(0.2)
+
+
+async def _send_strategy_reports(
+    channel_id: int,
+    args: argparse.Namespace,
+    timeout: float,
+    debug: bool,
+) -> None:
+    messages = _build_strategy_reports(args)
+    if not messages:
+        print("[discord-test] No strategy reports to send.")
+        return
+
+    intents = discord.Intents.default()
+    client = discord.Client(intents=intents)
+
+    async def _deliver() -> None:
+        try:
+            if debug:
+                print(f"[discord-test] Fetching channel {channel_id}...")
+            channel = client.get_channel(channel_id)
+            if channel is None:
+                channel = await client.fetch_channel(channel_id)
+
+            for message in messages:
+                if debug:
+                    print("[discord-test] Sending strategy report...")
+                await channel.send(message)
+            if debug:
+                print("[discord-test] Strategy reports sent.")
         except discord.NotFound:
             print(f"Channel not found for ID {channel_id}.")
         except discord.Forbidden as exc:
@@ -629,6 +772,19 @@ async def main() -> None:
             channel_id,
             args.trade_thread_json,
             args.trade_thread_inline,
+            timeout=args.timeout,
+            debug=args.debug,
+        )
+        return
+
+    if args.strategy_reports:
+        messages = _build_strategy_reports(args)
+        if args.dry_run:
+            print("\n\n".join(messages) if messages else "[discord-test] No strategy reports to send.")
+            return
+        await _send_strategy_reports(
+            channel_id,
+            args,
             timeout=args.timeout,
             debug=args.debug,
         )

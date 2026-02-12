@@ -19,8 +19,12 @@ from paths import OPTIONS_TRADE_LEDGER_PATH
 class PositionSummary:
     position_id: str
     strategy_tag: Optional[str] = None
+    symbol: Optional[str] = None
+    option_type: Optional[str] = None
     opened_at: Optional[datetime] = None
     closed_at: Optional[datetime] = None
+    first_event_at: Optional[datetime] = None
+    last_event_at: Optional[datetime] = None
     realized_pnl: Optional[float] = None
     status: Optional[str] = None
     entry_cost: float = 0.0
@@ -76,6 +80,14 @@ def _load_positions(path: Path) -> list[PositionSummary]:
                 tag = payload.get("strategy_tag")
                 if tag:
                     summary.strategy_tag = tag
+            if summary.symbol is None:
+                symbol = payload.get("symbol")
+                if symbol:
+                    summary.symbol = str(symbol)
+            if summary.option_type is None:
+                opt_type = payload.get("option_type")
+                if opt_type:
+                    summary.option_type = str(opt_type).lower()
 
             status = payload.get("position_status")
             if status:
@@ -83,6 +95,11 @@ def _load_positions(path: Path) -> list[PositionSummary]:
 
             event = payload.get("event")
             ts = _parse_ts(payload.get("ts"))
+            if ts:
+                if summary.first_event_at is None or ts < summary.first_event_at:
+                    summary.first_event_at = ts
+                if summary.last_event_at is None or ts > summary.last_event_at:
+                    summary.last_event_at = ts
             if event == "open" and ts:
                 if summary.opened_at is None or ts < summary.opened_at:
                     summary.opened_at = ts
@@ -155,10 +172,44 @@ def _format_timedelta(delta: Optional[timedelta]) -> str:
 
 
 def _compute_metrics(positions: list[PositionSummary]) -> dict:
+    first_event = min(
+        (p.first_event_at for p in positions if p.first_event_at is not None),
+        default=None,
+    )
+    last_event = max(
+        (p.last_event_at for p in positions if p.last_event_at is not None),
+        default=None,
+    )
     closed = [p for p in positions if _is_closed(p) and p.realized_pnl is not None]
     wins = [p for p in closed if p.realized_pnl > 0]
     losses = [p for p in closed if p.realized_pnl < 0]
     hold_times = [p.hold_time for p in closed if p.hold_time is not None]
+    trade_days = {
+        (p.closed_at or p.last_event_at).date()
+        for p in closed
+        if (p.closed_at or p.last_event_at) is not None
+    }
+    trade_days_count = len(trade_days)
+
+    call_count = sum(1 for p in closed if p.option_type == "call")
+    put_count = sum(1 for p in closed if p.option_type == "put")
+    option_total = call_count + put_count
+    call_pct = (call_count / option_total) if option_total else None
+    put_pct = (put_count / option_total) if option_total else None
+
+    symbol_counts: dict[str, int] = {}
+    for position in closed:
+        if not position.symbol:
+            continue
+        symbol_counts[position.symbol] = symbol_counts.get(position.symbol, 0) + 1
+    top_symbol = None
+    top_symbol_count = 0
+    if symbol_counts:
+        top_symbol, top_symbol_count = max(
+            symbol_counts.items(),
+            key=lambda item: (item[1], item[0]),
+        )
+    top_symbol_pct = (top_symbol_count / len(closed)) if closed else None
 
     pnl_total = sum(p.realized_pnl for p in closed) if closed else 0.0
     win_rate = (len(wins) / len(closed)) if closed else None
@@ -168,11 +219,31 @@ def _compute_metrics(positions: list[PositionSummary]) -> dict:
     expectancy = (pnl_total / len(closed)) if closed else None
     entry_cost = sum(p.entry_cost for p in closed) if closed else 0.0
     pnl_per_dollar = (pnl_total / entry_cost) if entry_cost > 0 else None
+    trades_per_day = (len(closed) / trade_days_count) if trade_days_count else None
+    if len(closed) < 50:
+        sample_flag = "LOW"
+    elif len(closed) < 200:
+        sample_flag = "LIMITED"
+    else:
+        sample_flag = "OK"
+    sample_summary = f"{len(closed)} trades ({sample_flag})"
 
     return {
         "positions": len(positions),
         "closed": len(closed),
         "open": len(positions) - len(closed),
+        "first_trade_date": first_event.date().isoformat() if first_event else None,
+        "last_trade_date": last_event.date().isoformat() if last_event else None,
+        "trade_days": trade_days_count,
+        "trades_per_day": trades_per_day,
+        "call_count": call_count,
+        "put_count": put_count,
+        "call_pct": call_pct,
+        "put_pct": put_pct,
+        "top_symbol": top_symbol,
+        "top_symbol_count": top_symbol_count,
+        "top_symbol_pct": top_symbol_pct,
+        "sample_flag": sample_summary,
         "pnl_total": pnl_total,
         "entry_cost": entry_cost,
         "pnl_per_dollar": pnl_per_dollar,

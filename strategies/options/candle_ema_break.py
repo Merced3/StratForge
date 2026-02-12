@@ -9,6 +9,16 @@ STRATEGY_BASE_NAME = "candle-ema-break"
 MODE = "single"  # "single" or "multi"
 SINGLE_TIMEFRAME = "2M"
 TIMEFRAMES = ["2M", "5M", "15M"]
+IS_ENABLED = False # Set to True to enable this strategy
+STRATEGY_DESCRIPTION = (
+    "Triggers when a candle body crosses above/below an EMA and sets direction. "
+    "Exits when a candle breaks back through the same EMA to stop out. "
+    "Designed to capture immediate momentum off EMA breaks."
+)
+STRATEGY_ASSESSMENT = (
+    "Disabled: negative EV with high trade frequency; exits on slower EMAs lag "
+    "and often give back gains. Fires from the hip with not optimal exits."
+)
 
 
 class CandleEmaBreakStrategy:
@@ -132,6 +142,8 @@ def _tag_matches(base: str, tag: Optional[str]) -> bool:
 
 
 def build_strategy() -> object:
+    if not IS_ENABLED:
+        return None
     base_name = STRATEGY_BASE_NAME
     mode = str(MODE or "single").lower()
     if mode == "multi":

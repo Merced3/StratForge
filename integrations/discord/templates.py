@@ -201,12 +201,30 @@ def format_economic_news_message(
 def format_strategy_report(
     strategy_name: str,
     metrics: dict,
-    note: Optional[str] = None,
+    description: Optional[str] = None,
     last_updated: Optional[str] = None,
+    note: Optional[str] = None,
+    enabled: Optional[bool] = None,
+    config_summary: Optional[str] = None,
+    assessment: Optional[str] = None,
 ) -> str:
+    if description is None:
+        description = note
     positions = metrics.get("positions")
     closed = metrics.get("closed")
     open_count = metrics.get("open")
+    first_trade = metrics.get("first_trade_date")
+    last_trade = metrics.get("last_trade_date")
+    trade_days = metrics.get("trade_days")
+    trades_per_day = metrics.get("trades_per_day")
+    call_count = metrics.get("call_count")
+    put_count = metrics.get("put_count")
+    call_pct = metrics.get("call_pct")
+    put_pct = metrics.get("put_pct")
+    top_symbol = metrics.get("top_symbol")
+    top_symbol_count = metrics.get("top_symbol_count")
+    top_symbol_pct = metrics.get("top_symbol_pct")
+    sample_flag = metrics.get("sample_flag")
     realized_pnl = metrics.get("pnl_total")
     entry_cost = metrics.get("entry_cost")
     pnl_per_dollar = metrics.get("pnl_per_dollar")
@@ -225,6 +243,34 @@ def format_strategy_report(
     lines = [
         f"**Strategy Report: {strategy_name}**",
         divider,
+    ]
+    if enabled is not None:
+        enabled_label = "✅" if enabled else "❌"
+        lines.append(f"**Enabled:** {enabled_label}")
+    if config_summary:
+        lines.append(f"**Config:** {config_summary}")
+    if assessment:
+        lines.append(f"**Assessment:** {assessment}")
+    date_range = _format_date_range(first_trade, last_trade)
+    if date_range != "n/a":
+        lines.append(f"**Trade Window:** {date_range}")
+    if trade_days:
+        trades_per_day_label = "n/a"
+        if trades_per_day is not None:
+            trades_per_day_label = f"{trades_per_day:.1f}"
+        lines.append(f"**Trade Days:** {trade_days} ({trades_per_day_label} trades/day)")
+    if sample_flag:
+        lines.append(f"**Sample:** {sample_flag}")
+    if call_count is not None and put_count is not None:
+        call_pct_label = _format_percent_optional(call_pct)
+        put_pct_label = _format_percent_optional(put_pct)
+        lines.append(
+            f"**Call/Put Split:** {call_pct_label} / {put_pct_label} ({call_count}/{put_count})"
+        )
+    if top_symbol:
+        top_pct_label = _format_percent_optional(top_symbol_pct)
+        lines.append(f"**Top Symbol:** {top_symbol} ({top_symbol_count}, {top_pct_label})")
+    lines.extend([
         f"**Trades:** {closed} closed / {open_count} open ({positions} total)",
         f"**Realized P/L:** {_format_money(realized_pnl)}",
         f"**Entry Cost:** {_format_money(entry_cost)}",
@@ -233,9 +279,9 @@ def format_strategy_report(
         f"**Win Rate:** {_format_percent_optional(win_rate)}",
         f"**Avg Win / Loss:** {_format_money(avg_win)} / {_format_money(avg_loss)}",
         f"**Avg Hold:** {_format_duration(avg_hold)}",
-    ]
-    if note:
-        lines.append(f"**Note:** {note}")
+    ])
+    if description:
+        lines.append(f"**Description:** {description}")
     return "\n".join(lines)
 
 
@@ -258,6 +304,16 @@ def _format_date_label(value: Optional[str]) -> str:
             except ValueError:
                 return value
     return str(value)
+
+
+def _format_date_range(start: Optional[str], end: Optional[str]) -> str:
+    if not start and not end:
+        return "n/a"
+    start_label = _format_date_label(start) if start else "n/a"
+    end_label = _format_date_label(end) if end else "n/a"
+    if start_label == end_label and start_label != "n/a":
+        return start_label
+    return f"{start_label} -> {end_label}"
 
 
 def _strip_markdown(message: str) -> str:

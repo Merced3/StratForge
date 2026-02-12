@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -65,6 +66,115 @@ def _resolve_channel_id(config: Dict[str, Any]) -> int:
     if bool(config.get("use_test_channel")):
         return int(getattr(cred, "DISCORD_TEST_CHANNEL_ID", 0) or 0)
     return int(getattr(cred, "DISCORD_STRATEGY_REPORTING_CHANNEL_ID", 0) or 0)
+
+
+_CONFIG_IGNORE_KEYS = {
+    "STRATEGY_BASE_NAME",
+    "STRATEGY_DESCRIPTION",
+    "STRATEGY_CONFIG_SUMMARY",
+    "STRATEGY_ASSESSMENT",
+    "IS_ENABLED",
+    "MODE",
+    "SINGLE_TIMEFRAME",
+    "TIMEFRAMES",
+}
+
+
+def _format_config_value(value: object) -> Optional[str]:
+    if isinstance(value, (str, int, float, bool)):
+        return str(value)
+    if isinstance(value, (list, tuple)):
+        if not value:
+            return ""
+        if all(isinstance(item, (str, int, float, bool)) for item in value):
+            return ",".join(str(item) for item in value)
+    return None
+
+
+def _build_config_summary(module: object) -> Optional[str]:
+    explicit = getattr(module, "STRATEGY_CONFIG_SUMMARY", None)
+    if isinstance(explicit, str) and explicit.strip():
+        return explicit.strip()
+
+    pieces: list[str] = []
+    mode = getattr(module, "MODE", None)
+    if mode:
+        pieces.append(f"mode={mode}")
+
+    single_tf = getattr(module, "SINGLE_TIMEFRAME", None)
+    timeframes = getattr(module, "TIMEFRAMES", None)
+    tf_label = None
+    if str(mode or "").lower() == "multi":
+        if isinstance(timeframes, (list, tuple)):
+            tfs = [str(tf) for tf in timeframes if tf]
+        else:
+            tfs = []
+        if not tfs and single_tf:
+            tfs = [str(single_tf)]
+        if tfs:
+            tf_label = ",".join(tfs)
+    else:
+        if single_tf:
+            tf_label = str(single_tf)
+        elif isinstance(timeframes, (list, tuple)) and timeframes:
+            tf_label = str(timeframes[0])
+
+    if tf_label:
+        pieces.append(f"tf={tf_label}")
+
+    extras: list[str] = []
+    for name, value in vars(module).items():
+        if not name.isupper() or name in _CONFIG_IGNORE_KEYS:
+            continue
+        formatted = _format_config_value(value)
+        if formatted is None or formatted == "":
+            continue
+        extras.append(f"{name.lower()}={formatted}")
+
+    pieces.extend(extras)
+    return " | ".join(pieces) if pieces else None
+
+
+def _load_strategy_metadata(root: Optional[Path] = None) -> Dict[str, dict]:
+    base = root or Path(__file__).resolve().parents[1] / "strategies" / "options"
+    if not base.exists():
+        return {}
+    metadata: Dict[str, dict] = {}
+    for path in sorted(base.glob("*.py")):
+        if path.name.startswith("_") or path.name in ("types.py", "exit_rules.py"):
+            continue
+        module_name = f"strategies.options.{path.stem}"
+        try:
+            module = importlib.import_module(module_name)
+        except Exception:
+            continue
+        base_name = getattr(module, "STRATEGY_BASE_NAME", None)
+        if not base_name:
+            continue
+        description = getattr(module, "STRATEGY_DESCRIPTION", None)
+        description_value = str(description).strip() if description else None
+        assessment = getattr(module, "STRATEGY_ASSESSMENT", None)
+        assessment_value = str(assessment).strip() if assessment else None
+        enabled = getattr(module, "IS_ENABLED", None)
+        config_summary = _build_config_summary(module)
+        metadata[str(base_name)] = {
+            "description": description_value or None,
+            "assessment": assessment_value or None,
+            "enabled": bool(enabled) if enabled is not None else None,
+            "config_summary": config_summary,
+        }
+    return metadata
+
+
+def _resolve_metadata(tag: str, metadata: Dict[str, dict]) -> dict:
+    if not tag or not metadata:
+        return {}
+    if tag in metadata:
+        return metadata[tag]
+    for base_name in sorted(metadata.keys(), key=len, reverse=True):
+        if tag.startswith(f"{base_name}-"):
+            return metadata[base_name]
+    return {}
 
 
 async def _send_with_temp_client(
@@ -155,12 +265,25 @@ async def send_strategy_reports(
     state = _load_state(STATE_PATH)
     updated = False
     use_temp_client = not bot.is_ready()
+    metadata = _load_strategy_metadata()
 
     for tag in sorted(by_tag.keys()):
         metrics = compute_metrics(by_tag[tag])
-        note = f"EOD summary for {trading_day}" if trading_day else "EOD summary"
         last_updated = trading_day
-        message = format_strategy_report(tag, metrics, note=note, last_updated=last_updated)
+        meta = _resolve_metadata(tag, metadata)
+        description = meta.get("description")
+        assessment = meta.get("assessment")
+        enabled = meta.get("enabled")
+        config_summary = meta.get("config_summary")
+        message = format_strategy_report(
+            tag,
+            metrics,
+            description=description,
+            last_updated=last_updated,
+            assessment=assessment,
+            enabled=enabled,
+            config_summary=config_summary,
+        )
 
         message_id = state.message_ids.get(tag)
         if message_id is not None:

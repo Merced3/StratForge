@@ -11,6 +11,13 @@ SINGLE_TIMEFRAME = "15M"
 TIMEFRAMES = ["2M", "5M", "15M"]
 FAST_EMA = "13"
 SLOW_EMA = "48"
+IS_ENABLED = True
+STRATEGY_DESCRIPTION = (
+    "Tracks a fast/slow EMA crossover on the configured timeframe. "
+    "Enters on crossover and flips direction when the cross reverses. "
+    "Uses a profit target plan (trim at 100%, close at 200%)."
+)
+STRATEGY_ASSESSMENT = ""
 
 
 class EmaCrossoverStrategy:
@@ -75,6 +82,8 @@ class EmaCrossoverStrategy:
 
 
 def build_strategy() -> object:
+    if not IS_ENABLED:
+        return None
     base_name = STRATEGY_BASE_NAME
     mode = str(MODE or "single").lower()
     if mode == "multi":

@@ -1143,12 +1143,12 @@
         "week_number": 94,
         "week_start_end_date": "02/09/2025-02/13/2025",
         "start_ammount": 39901.0,
-        "end_ammount": 39770.0,
-        "total_made": -131.0,
-        "num_of_trades": 44,
+        "end_ammount": 39693.0,
+        "total_made": -208.0,
+        "num_of_trades": 46,
         "num_of_profitable_trades": 8,
-        "num_of_negitive_trades": 36,
-        "description": "Day 1, Data collection was good, today we lost $25 today we had one good trade but other chop trades ate at the good trades today, we had 15 negitive trades and 5 green trades, really only 2 good trades but were eaten by loosers. Day 2, data collection is good, after the end of today, today proved to shut down a strategy which is `candle-ema-break-2m` i knew the strategy wasn't good but it was so basic that i had to give it a chance PLUS i wanted to see if the analytics system works with something that is high volume trade wise, today we lost -$105 and used $913 BP, total trades 23 trades, 2 profitble, 21 negitive.",
+        "num_of_negitive_trades": 38,
+        "description": "Day 1, Data collection was good, today we lost $25 today we had one good trade but other chop trades ate at the good trades today, we had 15 negitive trades and 5 green trades, really only 2 good trades but were eaten by loosers. Day 2, data collection is good, after the end of today, today proved to shut down a strategy which is `candle-ema-break-2m` i knew the strategy wasn't good but it was so basic that i had to give it a chance PLUS i wanted to see if the analytics system works with something that is high volume trade wise, today we lost -$105 and used $913 BP, total trades 23 trades, 2 profitble, 21 negitive. Day 3, only one strategy was running today and that was the 15 minute ema crossover script, today only had 2 trades both negitive, lost -77$, used $82 BP.",
         "important_message_ids": []
     }
 ]

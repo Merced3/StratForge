@@ -1143,12 +1143,12 @@
         "week_number": 94,
         "week_start_end_date": "02/09/2025-02/13/2025",
         "start_ammount": 39901.0,
-        "end_ammount": 39765.0,
-        "total_made": -136.0,
-        "num_of_trades": 48,
-        "num_of_profitable_trades": 9,
-        "num_of_negitive_trades": 39,
-        "description": "Day 1, Data collection was good, today we lost $25 today we had one good trade but other chop trades ate at the good trades today, we had 15 negitive trades and 5 green trades, really only 2 good trades but were eaten by loosers. Day 2, data collection is good, after the end of today, today proved to shut down a strategy which is `candle-ema-break-2m` i knew the strategy wasn't good but it was so basic that i had to give it a chance PLUS i wanted to see if the analytics system works with something that is high volume trade wise, today we lost -$105 and used $913 BP, total trades 23 trades, 2 profitble, 21 negitive. Day 3, only one strategy was running today and that was the 15 minute ema crossover script, today only had 2 trades both negitive, lost -77$, used $82 BP. Day 4, 2 trades, both were on one strategy, 1 profit and 1 negitive, total made today was 72$ total BP used is 76$, also today i have created 4 new strategies and will implement most of them tomorow for tommorrow's run.",
+        "end_ammount": 39396.0,
+        "total_made": -505.0,
+        "num_of_trades": 80,
+        "num_of_profitable_trades": 13,
+        "num_of_negitive_trades": 67,
+        "description": "Day 1, Data collection was good, today we lost $25 today we had one good trade but other chop trades ate at the good trades today, we had 15 negitive trades and 5 green trades, really only 2 good trades but were eaten by loosers. Day 2, data collection is good, after the end of today, today proved to shut down a strategy which is `candle-ema-break-2m` i knew the strategy wasn't good but it was so basic that i had to give it a chance PLUS i wanted to see if the analytics system works with something that is high volume trade wise, today we lost -$105 and used $913 BP, total trades 23 trades, 2 profitble, 21 negitive. Day 3, only one strategy was running today and that was the 15 minute ema crossover script, today only had 2 trades both negitive, lost -77$, used $82 BP. Day 4, 2 trades, both were on one strategy, 1 profit and 1 negitive, total made today was 72$ total BP used is 76$, also today i have created 4 new strategies and will implement most of them tomorow for tommorrow's run. Day 5, we had alot of trades 32 trades, 28 losses, 3 wins, 1 b/e, today was the most negitive day, today i notices that alot of the strats weren't suppose to correlate but some did, ending the day with a $-369 loss and $1,373 BP used.",
         "important_message_ids": []
     }
 ]

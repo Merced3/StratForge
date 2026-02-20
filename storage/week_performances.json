@@ -1155,12 +1155,12 @@
         "week_number": 95,
         "week_start_end_date": "02/16/2025-02/20/2025",
         "start_ammount": 39396.0,
-        "end_ammount": 38856.0,
-        "total_made": -540.0,
-        "num_of_trades": 57,
-        "num_of_profitable_trades": 10,
-        "num_of_negitive_trades": 47,
-        "description": "Day 1, No data was collected cause it was presidents day and market was closed. Day 2, total of 29 trades, 5 profitable, 24 negitive, lost a total of -$296 and used $1,262 BP. Day 3, total of 28 trades, 5 winners, 23 loosers, lost $-244 today, used $1,249 BP. Day 4, I messed up, I didn't check on my computer and it turns out it auto restarted or whatever and shut down all the process sometime at midnight or something so at 5AM on day 5 i had to mannually get the historical data that we missed out on yestarday, we missed out on obtaining 2m and 5m data but luckily we got the 15m and the obects for that day. ",
+        "end_ammount": 38569.0,
+        "total_made": -827.0,
+        "num_of_trades": 89,
+        "num_of_profitable_trades": 16,
+        "num_of_negitive_trades": 73,
+        "description": "Day 1, No data was collected cause it was presidents day and market was closed. Day 2, total of 29 trades, 5 profitable, 24 negitive, lost a total of -$296 and used $1,262 BP. Day 3, total of 28 trades, 5 winners, 23 loosers, lost $-244 today, used $1,249 BP. Day 4, I messed up, I didn't check on my computer and it turns out it auto restarted or whatever and shut down all the process sometime at midnight or something so at 5AM on day 5 i had to mannually get the historical data that we missed out on yestarday, we missed out on obtaining 2m and 5m data but luckily we got the 15m and the obects for that day. Day 5, data collection was good, made 32 trades, 6 wins, 26 loosers, lost -$287 and BP was $1,343.",
         "important_message_ids": [1474056623092928555]
     }
 ]

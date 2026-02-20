@@ -1,64 +1,71 @@
 {
     "version": 1,
-    "week_start": "2026-02-09",
-    "week_end": "2026-02-15",
+    "week_start": "2026-02-16",
+    "week_end": "2026-02-22",
     "timezone": "America/Chicago",
     "source": "tradingeconomics",
     "events": [
         {
-            "date": "2026-02-10",
-            "time_label": "07:30 AM",
-            "title": "Retail Sales MoM",
-            "starts_at": "2026-02-10T07:30:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-02-11",
-            "time_label": "07:30 AM",
-            "title": "Non Farm Payrolls",
-            "starts_at": "2026-02-11T07:30:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-02-11",
-            "time_label": "07:30 AM",
-            "title": "Unemployment Rate",
-            "starts_at": "2026-02-11T07:30:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-02-12",
-            "time_label": "09:00 AM",
-            "title": "Existing Home Sales",
-            "starts_at": "2026-02-12T09:00:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-02-13",
-            "time_label": "07:30 AM",
-            "title": "Core Inflation Rate MoM",
-            "starts_at": "2026-02-13T07:30:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-02-13",
-            "time_label": "07:30 AM",
-            "title": "Core Inflation Rate YoY",
-            "starts_at": "2026-02-13T07:30:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-02-13",
-            "time_label": "07:30 AM",
-            "title": "Inflation Rate MoM",
-            "starts_at": "2026-02-13T07:30:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-02-13",
+            "date": "2026-02-17",
             "time_label": "07:30 AM",
             "title": "Inflation Rate YoY",
-            "starts_at": "2026-02-13T07:30:00-06:00",
+            "starts_at": "2026-02-17T07:30:00-06:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-02-18",
+            "time_label": "01:00 PM",
+            "title": "FOMC Minutes",
+            "starts_at": "2026-02-18T13:00:00-06:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-02-18",
+            "time_label": "07:30 AM",
+            "title": "Building Permits Prel",
+            "starts_at": "2026-02-18T07:30:00-06:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-02-18",
+            "time_label": "07:30 AM",
+            "title": "Durable Goods Orders MoM",
+            "starts_at": "2026-02-18T07:30:00-06:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-02-18",
+            "time_label": "07:30 AM",
+            "title": "Housing Starts",
+            "starts_at": "2026-02-18T07:30:00-06:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-02-20",
+            "time_label": "07:30 AM",
+            "title": "Core PCE Price Index MoM",
+            "starts_at": "2026-02-20T07:30:00-06:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-02-20",
+            "time_label": "07:30 AM",
+            "title": "GDP Growth Rate QoQ Adv",
+            "starts_at": "2026-02-20T07:30:00-06:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-02-20",
+            "time_label": "07:30 AM",
+            "title": "Personal Income MoM",
+            "starts_at": "2026-02-20T07:30:00-06:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-02-20",
+            "time_label": "07:30 AM",
+            "title": "Personal Spending MoM",
+            "starts_at": "2026-02-20T07:30:00-06:00",
             "source": "tradingeconomics"
         }
     ]

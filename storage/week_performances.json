@@ -1162,5 +1162,17 @@
         "num_of_negitive_trades": 73,
         "description": "Day 1, No data was collected cause it was presidents day and market was closed. Day 2, total of 29 trades, 5 profitable, 24 negitive, lost a total of -$296 and used $1,262 BP. Day 3, total of 28 trades, 5 winners, 23 loosers, lost $-244 today, used $1,249 BP. Day 4, I messed up, I didn't check on my computer and it turns out it auto restarted or whatever and shut down all the process sometime at midnight or something so at 5AM on day 5 i had to mannually get the historical data that we missed out on yestarday, we missed out on obtaining 2m and 5m data but luckily we got the 15m and the obects for that day. Day 5, data collection was good, made 32 trades, 6 wins, 26 loosers, lost -$287 and BP was $1,343.",
         "important_message_ids": [1474056623092928555]
+    },
+    {
+        "week_number": 96,
+        "week_start_end_date": "02/23/2025-02/27/2025",
+        "start_ammount": 38569.0,
+        "end_ammount": 38418.0,
+        "total_made": -151.0,
+        "num_of_trades": 97,
+        "num_of_profitable_trades": 24,
+        "num_of_negitive_trades": 73,
+        "description": "Day 1, made 28 trades, 9 win, 19 losse, gained $4, stotal BP used $1,165, no issue with data collection. Day 2, took 34 trades, 4 wins, 29 losses, 1 b/e - im counting it as a loss tho, lost -$171 today, total BP used $1,304, no issue with data collection. Day 3, turned on a old strategy, turned it off too soon, only 5 trading days mean nothing hence why I turned it on, but we will only see it run on day 4, but as for today it took 35 trades, 22 loosers, 11 winners, 2 b/e's, gained $16, used $1,522 BP, data collection was good, no issues.",
+        "important_message_ids": [1474056623092928555]
     }
 ]

@@ -5,20 +5,20 @@ from typing import List, Optional
 from .types import PositionAction, StrategyContext, StrategySignal
 
 
+IS_ENABLED = True # Set to True to enable this strategy
 STRATEGY_BASE_NAME = "candle-ema-break"
 MODE = "single"  # "single" or "multi"
 SINGLE_TIMEFRAME = "2M"
 TIMEFRAMES = ["2M", "5M", "15M"]
-IS_ENABLED = False # Set to True to enable this strategy
 STRATEGY_DESCRIPTION = (
     "Triggers when a candle body crosses above/below an EMA and sets direction. "
     "Exits when a candle breaks back through the same EMA to stop out. "
     "Designed to capture immediate momentum off EMA breaks."
 )
-STRATEGY_ASSESSMENT = (
-    "Disabled: negative EV with high trade frequency; exits on slower EMAs lag "
-    "and often give back gains. Fires from the hip with not optimal exits."
-)
+#STRATEGY_ASSESSMENT = (
+#    "Disabled: negative EV with high trade frequency; exits on slower EMAs lag "
+#    "and often give back gains. Fires from the hip with not optimal exits."
+#)
 
 
 class CandleEmaBreakStrategy:

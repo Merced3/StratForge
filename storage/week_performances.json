@@ -1167,12 +1167,12 @@
         "week_number": 96,
         "week_start_end_date": "02/23/2025-02/27/2025",
         "start_ammount": 38569.0,
-        "end_ammount": 38418.0,
-        "total_made": -151.0,
-        "num_of_trades": 97,
-        "num_of_profitable_trades": 24,
-        "num_of_negitive_trades": 73,
-        "description": "Day 1, made 28 trades, 9 win, 19 losse, gained $4, stotal BP used $1,165, no issue with data collection. Day 2, took 34 trades, 4 wins, 29 losses, 1 b/e - im counting it as a loss tho, lost -$171 today, total BP used $1,304, no issue with data collection. Day 3, turned on a old strategy, turned it off too soon, only 5 trading days mean nothing hence why I turned it on, but we will only see it run on day 4, but as for today it took 35 trades, 22 loosers, 11 winners, 2 b/e's, gained $16, used $1,522 BP, data collection was good, no issues.",
+        "end_ammount": 38580.0, 
+        "total_made": 11.0,
+        "num_of_trades": 127,
+        "num_of_profitable_trades": 31,
+        "num_of_negitive_trades": 96, 
+        "description": "Day 1, made 28 trades, 9 win, 19 losse, gained $4, stotal BP used $1,165, no issue with data collection. Day 2, took 34 trades, 4 wins, 29 losses, 1 b/e - im counting it as a loss tho, lost -$171 today, total BP used $1,304, no issue with data collection. Day 3, turned on a old strategy, turned it off too soon, only 5 trading days mean nothing hence why I turned it on, but we will only see it run on day 4, but as for today it took 35 trades, 22 loosers, 11 winners, 2 b/e's, gained $16, used $1,522 BP, data collection was good, no issues. Day 4, 30 trades, 7 profitbale, 22 negitive, 1 b/e, made $162 and used $1,278 BP today brought the week to b/e, data collection good, saw no issues.",
         "important_message_ids": [1474056623092928555]
     }
 ]

@@ -1179,12 +1179,12 @@
         "week_number": 97,
         "week_start_end_date": "03/02/2025-03/06/2025",
         "start_ammount": 38277.0,
-        "end_ammount": 38114.0,
-        "total_made": -163,
-        "num_of_trades": 84,
-        "num_of_profitable_trades": 17,
-        "num_of_negitive_trades": 67,
-        "description": "Day 1, made 43 trades, 9 win, 33 losse, 1 b/e, lost -$61, total BP used $1,828, no issue with data collection, started to work on decoupling the storage system again, so that other trading systems can use it, not just this one. Day 2, data collection good, no interuptions, 41 trades 8 positive 33 negitive, 4 of the trades were over 100% and one was 200%, lost -102$, BP was 1,674$. ",
+        "end_ammount": 37965.0,
+        "total_made": -312,
+        "num_of_trades": 136,
+        "num_of_profitable_trades": 24,
+        "num_of_negitive_trades": 112,
+        "description": "Day 1, made 43 trades, 9 win, 33 losse, 1 b/e, lost -$61, total BP used $1,828, no issue with data collection, started to work on decoupling the storage system again, so that other trading systems can use it, not just this one. Day 2, data collection good, no interuptions, 41 trades 8 positive 33 negitive, 4 of the trades were over 100% and one was 200%, lost -102$, BP was 1,674$. Day 3, data collection good, 52 trades 7 positive 45 negitive, lost -149$ used $2,309 BP, tbh given how many trades, I think the system did pretty good given how many we couldve lost today, could've lost alot more.",
         "important_message_ids": []
     }
 ]

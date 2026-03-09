@@ -1,50 +1,113 @@
 {
     "version": 1,
-    "week_start": "2026-03-02",
-    "week_end": "2026-03-08",
+    "week_start": "2026-03-09",
+    "week_end": "2026-03-15",
     "timezone": "America/Chicago",
     "source": "tradingeconomics",
     "events": [
         {
-            "date": "2026-03-02",
+            "date": "2026-03-10",
             "time_label": "09:00 AM",
-            "title": "ISM Manufacturing PMI",
-            "starts_at": "2026-03-02T09:00:00-06:00",
+            "title": "Existing Home Sales",
+            "starts_at": "2026-03-10T09:00:00-05:00",
             "source": "tradingeconomics"
         },
         {
-            "date": "2026-03-04",
-            "time_label": "09:00 AM",
-            "title": "ISM Services PMI",
-            "starts_at": "2026-03-04T09:00:00-06:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-03-06",
+            "date": "2026-03-11",
             "time_label": "07:30 AM",
-            "title": "Non Farm Payrolls",
-            "starts_at": "2026-03-06T07:30:00-06:00",
+            "title": "Core Inflation Rate MoM",
+            "starts_at": "2026-03-11T07:30:00-05:00",
             "source": "tradingeconomics"
         },
         {
-            "date": "2026-03-06",
+            "date": "2026-03-11",
             "time_label": "07:30 AM",
-            "title": "Retail Sales MoM",
-            "starts_at": "2026-03-06T07:30:00-06:00",
+            "title": "Core Inflation Rate YoY",
+            "starts_at": "2026-03-11T07:30:00-05:00",
             "source": "tradingeconomics"
         },
         {
-            "date": "2026-03-06",
+            "date": "2026-03-11",
+            "time_label": "07:30 AM",
+            "title": "Inflation Rate MoM",
+            "starts_at": "2026-03-11T07:30:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-03-11",
+            "time_label": "07:30 AM",
+            "title": "Inflation Rate YoY",
+            "starts_at": "2026-03-11T07:30:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-03-12",
+            "time_label": "07:30 AM",
+            "title": "Building Permits Prel",
+            "starts_at": "2026-03-12T07:30:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-03-12",
+            "time_label": "07:30 AM",
+            "title": "Housing Starts",
+            "starts_at": "2026-03-12T07:30:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-03-13",
+            "time_label": "07:30 AM",
+            "title": "Core PCE Price Index MoM",
+            "starts_at": "2026-03-13T07:30:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-03-13",
+            "time_label": "07:30 AM",
+            "title": "Durable Goods Orders MoM",
+            "starts_at": "2026-03-13T07:30:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-03-13",
+            "time_label": "07:30 AM",
+            "title": "GDP Growth Rate QoQ 2nd Est",
+            "starts_at": "2026-03-13T07:30:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-03-13",
+            "time_label": "07:30 AM",
+            "title": "Personal Income MoM",
+            "starts_at": "2026-03-13T07:30:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-03-13",
+            "time_label": "07:30 AM",
+            "title": "Personal Spending MoM",
+            "starts_at": "2026-03-13T07:30:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-03-13",
             "time_label": "07:30 AM",
             "title": "Unemployment Rate",
-            "starts_at": "2026-03-06T07:30:00-06:00",
+            "starts_at": "2026-03-13T07:30:00-05:00",
             "source": "tradingeconomics"
         },
         {
-            "date": "2026-03-06",
+            "date": "2026-03-13",
             "time_label": "09:00 AM",
-            "title": "Ivey PMI s.a",
-            "starts_at": "2026-03-06T09:00:00-06:00",
+            "title": "JOLTs Job Openings",
+            "starts_at": "2026-03-13T09:00:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-03-13",
+            "time_label": "09:00 AM",
+            "title": "Michigan Consumer Sentiment Prel",
+            "starts_at": "2026-03-13T09:00:00-05:00",
             "source": "tradingeconomics"
         }
     ]

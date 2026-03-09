@@ -1186,5 +1186,18 @@
         "num_of_negitive_trades": 202,
         "description": "Day 1, made 43 trades, 9 win, 33 losse, 1 b/e, lost -$61, total BP used $1,828, no issue with data collection, started to work on decoupling the storage system again, so that other trading systems can use it, not just this one. Day 2, data collection good, no interuptions, 41 trades 8 positive 33 negitive, 4 of the trades were over 100% and one was 200%, lost -102$, BP was 1,674$. Day 3, data collection good, 52 trades 7 positive 45 negitive, lost -149$ used $2,309 BP, tbh given how many trades, I think the system did pretty good given how many we couldve lost today, could've lost alot more. Day 4, 54 trades 14 positive 40 negitive, made $19, used $2,262 BP, data collection was interupted and one 2 min (11:04) candle was missed but everything else was fine, data collection is good. Day 5, one of the biggest loosing days, took 54 trades 4 winners 50 loosers, lost $523, data collection was good, no issues.",
         "important_message_ids": []
+    },
+    {
+        "week_number": 98,
+        "week_start_end_date": "03/09/2025-03/13/2025",
+        "start_ammount": 37461.0,
+        "end_ammount": 38609.0,
+        "total_made": 1148,
+        "num_of_trades": 38,
+        "num_of_profitable_trades": 10,
+        "num_of_negitive_trades": 28,
+        "description": "Day 1, 38 trades, 10 win, 27 losse, 1 b/e, made $1,148, today was the most the program has ever made since the start of week 91 (when trading was reactived/new code/engine state), 2 trades did over 1300% which is INSANE, plus 2 200% trades.",
+        "important_message_ids": []
     }
+
 ]

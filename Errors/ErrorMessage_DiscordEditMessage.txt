@@ -1,0 +1,46 @@
+[13:15:00] 15M candle closed (schedule) count=15 O:671.3 H:671.36 L:670.315 C:670.65
+    [EMA CS] Updated live EMA for 15M.
+INFO:     127.0.0.1:63030 - "POST /refresh-chart HTTP/1.1" 200 OK
+[13:16:00] 2M candle closed (schedule) count=113 O:670.61 H:670.78 L:670.35 C:670.38
+    [EMA CS] Updated live EMA for 2M.
+INFO:     127.0.0.1:64306 - "POST /refresh-chart HTTP/1.1" 200 OK
+
+An error occurred when trying to edit the message:
+Time: 2026-03-09T12:16:17.508796
+Location: integrations.discord.client.py, edit_discord_message()
+Type: HTTPException
+Message: 429 Too Many Requests (error code: 40062): Service resource is being rate limited.
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\HNI\OneDrive\Desktop\Coding\Trading programs\Flag-Zone-Bot\integrations\discord\client.py", line 43, in edit_discord_message
+    await message.edit(content=new_content)
+  File "C:\Users\HNI\OneDrive\Desktop\Coding\Trading programs\Flag-Zone-Bot\venv\lib\site-packages\discord\message.py", line 2086, in edit
+    data = await self._state.http.edit_message(self.channel.id, self.id, params=params)
+  File "C:\Users\HNI\OneDrive\Desktop\Coding\Trading programs\Flag-Zone-Bot\venv\lib\site-packages\discord\http.py", line 759, in request
+    raise HTTPException(response, data)
+discord.errors.HTTPException: 429 Too Many Requests (error code: 40062): Service resource is being rate limited.
+
+
+An error occurred when trying to edit the message:
+Time: 2026-03-09T12:16:33.744370
+Location: integrations.discord.client.py, edit_discord_message()
+Type: HTTPException
+Message: 429 Too Many Requests (error code: 40062): Service resource is being rate limited.
+Traceback:
+Traceback (most recent call last):
+  File "C:\Users\HNI\OneDrive\Desktop\Coding\Trading programs\Flag-Zone-Bot\integrations\discord\client.py", line 43, in edit_discord_message
+    await message.edit(content=new_content)
+  File "C:\Users\HNI\OneDrive\Desktop\Coding\Trading programs\Flag-Zone-Bot\venv\lib\site-packages\discord\message.py", line 2086, in edit
+    data = await self._state.http.edit_message(self.channel.id, self.id, params=params)
+  File "C:\Users\HNI\OneDrive\Desktop\Coding\Trading programs\Flag-Zone-Bot\venv\lib\site-packages\discord\http.py", line 759, in request
+    raise HTTPException(response, data)
+discord.errors.HTTPException: 429 Too Many Requests (error code: 40062): Service resource is being rate limited.
+
+    [MARKER-2M] 113, 670.42, sell
+[13:18:00] 2M candle closed (schedule) count=114 O:670.38 H:670.47 L:670.09 C:670.14
+    [EMA CS] Updated live EMA for 2M.
+[RESEARCH] candle-ema-break-2m put SPY-put-667.0-20260309 @ 0.44 (2M: Candle broke EMA 48 down)
+[STRATEGY] candle-ema-break-2m opened put position pos-SPY-put-667-20260309-tag-candle-ema-break-2m-20260309171800856579 (Candle broke EMA 48 down)
+INFO:     127.0.0.1:65443 - "POST /refresh-chart HTTP/1.1" 200 OK
+    [MARKER-2M] 114, 670.1, buy
+[13:20:00] 2M candle closed (schedule) count=115 O:670.1347 H:670.29 L:669.695 C:669.75

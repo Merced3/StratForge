@@ -1196,7 +1196,7 @@
         "num_of_trades": 38,
         "num_of_profitable_trades": 10,
         "num_of_negitive_trades": 28,
-        "description": "Day 1, 38 trades, 10 win, 27 losse, 1 b/e, made $1,148, today was the most the program has ever made since the start of week 91 (when trading was reactived/new code/engine state), 2 trades did over 1300% which is INSANE, plus 2 200% trades.",
+        "description": "Day 1, 38 trades, 10 win, 27 losse, 1 b/e, made $1,148, today was the most the program has ever made since the start of week 91 (when trading was reactived/new code/engine state), 2 trades did over 1300% which is INSANE, plus 2 200% trades, we did have one error today which i recorded, it was a failure to re-edit a discord message, i looked back at the discord messages for today and there is a message that wasn't finished so I need to fix that, I just noticed the error in the logs.",
         "important_message_ids": []
     }
 

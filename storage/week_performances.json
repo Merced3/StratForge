@@ -1191,12 +1191,12 @@
         "week_number": 98,
         "week_start_end_date": "03/09/2025-03/13/2025",
         "start_ammount": 37461.0,
-        "end_ammount": 38609.0,
-        "total_made": 1148,
-        "num_of_trades": 38,
-        "num_of_profitable_trades": 10,
-        "num_of_negitive_trades": 28,
-        "description": "Day 1, 38 trades, 10 win, 27 losse, 1 b/e, made $1,148, today was the most the program has ever made since the start of week 91 (when trading was reactived/new code/engine state), 2 trades did over 1300% which is INSANE, plus 2 200% trades, we did have one error today which i recorded, it was a failure to re-edit a discord message, i looked back at the discord messages for today and there is a message that wasn't finished so I need to fix that, I just noticed the error in the logs.",
+        "end_ammount": 38405.0,
+        "total_made": 994,
+        "num_of_trades": 81,
+        "num_of_profitable_trades": 17,
+        "num_of_negitive_trades": 64,
+        "description": "Day 1, 38 trades, 10 win, 27 losse, 1 b/e, made $1,148, today was the most the program has ever made since the start of week 91 (when trading was reactived/new code/engine state), 2 trades did over 1300% which is INSANE, plus 2 200% trades, we did have one error today which i recorded, it was a failure to re-edit a discord message, i looked back at the discord messages for today and there is a message that wasn't finished so I need to fix that, I just noticed the error in the logs. Day 2, data collection was good, there was a order today where it marked the message wrong, when i have time i will go back and check the code and how to fix that, Today made 43 trades, 7 wins 36 losses, lost -204$ today, used $1,809 BP.",
         "important_message_ids": []
     }
 

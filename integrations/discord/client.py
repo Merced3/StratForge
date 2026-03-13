@@ -35,24 +35,94 @@ def _get_channel(channel_id=None):
     return bot.get_channel(target_id)
 
 
-async def edit_discord_message(message_id, new_content, delete_last_message=None, file_path=None, channel_id=None):
+def _extract_retry_after_seconds(exc):
+    retry_after = getattr(exc, "retry_after", None)
+    if retry_after is not None:
+        try:
+            return float(retry_after)
+        except (TypeError, ValueError):
+            return None
+
+    response = getattr(exc, "response", None)
+    status = getattr(exc, "status", None)
+    if status is None and response is not None:
+        status = getattr(response, "status", None)
+    if status != 429:
+        return None
+
+    text = getattr(exc, "text", None)
+    if isinstance(text, dict):
+        retry_after = text.get("retry_after")
+        if retry_after is not None:
+            try:
+                return float(retry_after)
+            except (TypeError, ValueError):
+                return None
+
+    if response is not None:
+        retry_header = response.headers.get("Retry-After")
+        if retry_header:
+            try:
+                return float(retry_header)
+            except (TypeError, ValueError):
+                return None
+
+    return None
+
+
+async def _maybe_wait_for_rate_limit(exc, attempt, backoff_factor):
+    retry_after = _extract_retry_after_seconds(exc)
+    if retry_after is None:
+        return False
+    backoff_wait = backoff_factor * (2**attempt)
+    wait_for = max(retry_after, backoff_wait)
+    print_log(f"[DISCORD] Rate limited. Waiting {wait_for:.2f}s before retrying.")
+    await asyncio.sleep(wait_for)
+    return True
+
+
+async def edit_discord_message(
+    message_id,
+    new_content,
+    delete_last_message=None,
+    file_path=None,
+    channel_id=None,
+    retries=3,
+    backoff_factor=1,
+):
     channel = _get_channel(channel_id)
     if channel:
-        try:
-            message = await channel.fetch_message(message_id)
-            await message.edit(content=new_content)
-            if file_path:
-                await send_file_discord(file_path, channel_id=channel_id)
-        except Exception as e:
-            await error_log_and_discord_message(
-                e,
-                "integrations.discord.client",
-                "edit_discord_message",
-                "An error occurred when trying to edit the message",
-            )
-        if delete_last_message:
-            async for old_message in channel.history(limit=1):
-                await old_message.delete()
+        for attempt in range(retries):
+            try:
+                message = await channel.fetch_message(message_id)
+                await message.edit(content=new_content)
+                if file_path:
+                    await send_file_discord(file_path, channel_id=channel_id)
+                if delete_last_message:
+                    async for old_message in channel.history(limit=1):
+                        await old_message.delete()
+                return
+            except (discord.HTTPException, discord.NotFound) as e:
+                if await _maybe_wait_for_rate_limit(e, attempt, backoff_factor):
+                    continue
+                if attempt < retries - 1:
+                    await asyncio.sleep(backoff_factor * (2**attempt))
+                    continue
+                await error_log_and_discord_message(
+                    e,
+                    "integrations.discord.client",
+                    "edit_discord_message",
+                    "An error occurred when trying to edit the message",
+                )
+                return
+            except Exception as e:
+                await error_log_and_discord_message(
+                    e,
+                    "integrations.discord.client",
+                    "edit_discord_message",
+                    "An error occurred when trying to edit the message",
+                )
+                return
     else:
         print_log("Channel not found.")
 
@@ -114,6 +184,8 @@ async def print_discord(
                 )
             return sent_message
         except (discord.HTTPException, discord.NotFound) as e:
+            if await _maybe_wait_for_rate_limit(e, attempt, backoff_factor):
+                continue
             print_log(f"Discord API error on attempt {attempt + 1}: {str(e)}")
             if attempt < retries - 1:
                 await asyncio.sleep(backoff_factor * (2**attempt))
@@ -136,6 +208,8 @@ async def send_file_discord(file_path, retries=3, backoff_factor=1, channel_id=N
                 await channel.send(file=image_file)
                 return
         except (discord.HTTPException, discord.NotFound) as e:
+            if await _maybe_wait_for_rate_limit(e, attempt, backoff_factor):
+                continue
             print_log(f"Discord API error on attempt {attempt + 1}: {str(e)}")
             if attempt < retries - 1:
                 await asyncio.sleep(backoff_factor * (2**attempt))

@@ -136,7 +136,7 @@ def format_trade_close(
         f"\n{format_divider()}\n"
         f"**AVG BID:**    {avg_label}\n"
         f"**TOTAL:**    {total_str}{indicator}\n"
-        f"**PERCENT:**    {percent_str}"
+        f"**PERCENT:**    {percent_str}\n"
     )
 
 

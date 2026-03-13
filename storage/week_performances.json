@@ -1191,12 +1191,12 @@
         "week_number": 98,
         "week_start_end_date": "03/09/2025-03/13/2025",
         "start_ammount": 37461.0,
-        "end_ammount": 38405.0,
-        "total_made": 994,
-        "num_of_trades": 81,
-        "num_of_profitable_trades": 17,
-        "num_of_negitive_trades": 64,
-        "description": "Day 1, 38 trades, 10 win, 27 losse, 1 b/e, made $1,148, today was the most the program has ever made since the start of week 91 (when trading was reactived/new code/engine state), 2 trades did over 1300% which is INSANE, plus 2 200% trades, we did have one error today which i recorded, it was a failure to re-edit a discord message, i looked back at the discord messages for today and there is a message that wasn't finished so I need to fix that, I just noticed the error in the logs. Day 2, data collection was good, there was a order today where it marked the message wrong, when i have time i will go back and check the code and how to fix that, Today made 43 trades, 7 wins 36 losses, lost -204$ today, used $1,809 BP.",
+        "end_ammount": 37904.0,
+        "total_made": 443,
+        "num_of_trades": 177,
+        "num_of_profitable_trades": 30,
+        "num_of_negitive_trades": 147,
+        "description": "Day 1, 38 trades, 10 win, 27 losse, 1 b/e, made $1,148, today was the most the program has ever made since the start of week 91 (when trading was reactived/new code/engine state), 2 trades did over 1300% which is INSANE, plus 2 200% trades, we did have one error today which i recorded, it was a failure to re-edit a discord message, i looked back at the discord messages for today and there is a message that wasn't finished so I need to fix that, I just noticed the error in the logs. Day 2, data collection was good, there was a order today where it marked the message wrong, when i have time i will go back and check the code and how to fix that, Today made 43 trades, 7 wins 36 losses, lost -204$ today, used $1,809 BP. Day 3, made 45 trades 5 positive 40 negitive, lost $501, used $1,824 BP, data collection is good, had a issue again with discord hitting a rate limit and the program not being able to edit a message, other than that the program ran good. Day 4, made 51 trades 8 positive 43 negitive, lost $271, used $2,162 BP, data collection is good, had a issue again with discord hitting a rate limit and the program not being able to edit a message, other than that the program ran good, I also fixed that issue, I also went through the Analytics V2 data to see if there were any signal in the noise of the market for the time being since the V2 system started, no edge has been found yet.",
         "important_message_ids": []
     }
 

@@ -2,6 +2,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import JSONResponse
 from typing import List
 import asyncio
+from shared_state import print_log
 
 app = FastAPI()
 
@@ -64,7 +65,10 @@ async def refresh_chart(req: Request):
     # 2) Save PNG in the background (non-blocking)
     async def _save():
         from web_dash.chart_updater import update_chart
-        await asyncio.to_thread(update_chart, timeframe=timeframe, chart_type=chart_type, notify=False)
+        try:
+            await asyncio.to_thread(update_chart, timeframe=timeframe, chart_type=chart_type, notify=False)
+        except Exception as exc:
+            print_log(f"[refresh_chart] background save failed for {chart_type}:{timeframe}: {exc}")
     asyncio.create_task(_save())
 
     return JSONResponse({"status": "saved-and-broadcast", "timeframes": tfs, "clients": len(clients)})

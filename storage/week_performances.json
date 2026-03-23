@@ -1210,6 +1210,18 @@
         "num_of_negitive_trades": 196,
         "description": "Day 1, made 36 trades, 7 wins, 29 losses, lost -$268, used $1,352 BP. Day 2, made 43 trades, 3 wins, 40 losses, lost -$378, used $1,749 BP. Day 3, made 56 trades, 6 wins, 50 losses, lost -$256, used $2,478 BP. Day 4, made 39 trades, 8 wins, 31 losses, lost -$234, used $1,910 BP. Day 5, made 61 trades, 15 wins, 46 losses, lost -$51, used $2,544 BP.",
         "important_message_ids": []
+    },
+    {
+        "week_number": 100,
+        "week_start_end_date": "03/23/2025-03/27/2025",
+        "start_ammount": 36097.0,
+        "end_ammount": 36097.0,
+        "total_made": 0.0,
+        "num_of_trades": 0,
+        "num_of_profitable_trades": 0,
+        "num_of_negitive_trades": 0,
+        "description": "Day 1, . Day 2, . Day 3, . Day 4, . Day 5, .",
+        "important_message_ids": []
     }
 
 ]

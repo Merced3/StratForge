@@ -4,7 +4,7 @@ from typing import List, Optional
 
 import pytz
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.support import expected_conditions as EC
@@ -19,6 +19,11 @@ from ..models import EconomicCalendarWeek, EconomicEvent
 class TradingEconomicsCalendarProvider:
     name = "tradingeconomics"
     url = "https://tradingeconomics.com/calendar"
+    empty_state_markers = (
+        "no events scheduled",
+        "no economic data available",
+        "no economic data",
+    )
 
     def __init__(self, timezone_name: str = "America/Chicago", logger=print_log) -> None:
         self.timezone = timezone_name
@@ -194,7 +199,12 @@ class TradingEconomicsCalendarProvider:
         self._log("[ECON] Extracting calendar events.")
         events: List[EconomicEvent] = []
         tz = pytz.timezone(self.timezone)
-        calendar_table = wait.until(EC.presence_of_element_located((By.ID, "calendar")))
+        state = self._wait_for_calendar_state(driver, wait)
+        if state == "empty":
+            self._log("[ECON] Empty calendar state detected; saving week with no events.")
+            return []
+
+        calendar_table = driver.find_element(By.ID, "calendar")
         date_headers = calendar_table.find_elements(By.CLASS_NAME, "table-header")
 
         if not date_headers:
@@ -240,6 +250,44 @@ class TradingEconomicsCalendarProvider:
             element.click()
         except Exception:
             driver.execute_script("arguments[0].click();", element)
+
+    def _wait_for_calendar_state(self, driver, wait) -> str:
+        try:
+            return wait.until(lambda d: self._detect_calendar_state(d))
+        except TimeoutException:
+            state = self._detect_calendar_state(driver)
+            if state == "empty":
+                return state
+            raise
+
+    def _detect_calendar_state(self, driver) -> Optional[str]:
+        if self._has_calendar_table(driver):
+            return "calendar"
+        if self._has_empty_state(driver):
+            return "empty"
+        return None
+
+    def _has_calendar_table(self, driver) -> bool:
+        try:
+            return bool(driver.find_elements(By.ID, "calendar"))
+        except Exception:
+            return False
+
+    def _has_empty_state(self, driver) -> bool:
+        haystacks = []
+
+        try:
+            haystacks.append(driver.page_source)
+        except Exception:
+            pass
+
+        try:
+            haystacks.append(driver.find_element(By.TAG_NAME, "body").text)
+        except Exception:
+            pass
+
+        merged = " ".join(text.lower() for text in haystacks if text)
+        return any(marker in merged for marker in self.empty_state_markers)
 
     def _log(self, message: str) -> None:
         if self.logger:

@@ -1,8 +1,44 @@
 {
     "version": 1,
-    "week_start": "2026-03-23",
-    "week_end": "2026-03-29",
+    "week_start": "2026-03-30",
+    "week_end": "2026-04-05",
     "timezone": "America/Chicago",
     "source": "tradingeconomics",
-    "events": []
+    "events": [
+        {
+            "date": "2026-03-31",
+            "time_label": "09:00 AM",
+            "title": "JOLTs Job Openings",
+            "starts_at": "2026-03-31T09:00:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-04-01",
+            "time_label": "07:30 AM",
+            "title": "Retail Sales MoM",
+            "starts_at": "2026-04-01T07:30:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-04-01",
+            "time_label": "09:00 AM",
+            "title": "ISM Manufacturing PMI",
+            "starts_at": "2026-04-01T09:00:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-04-03",
+            "time_label": "07:30 AM",
+            "title": "Non Farm Payrolls",
+            "starts_at": "2026-04-03T07:30:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-04-03",
+            "time_label": "07:30 AM",
+            "title": "Unemployment Rate",
+            "starts_at": "2026-04-03T07:30:00-05:00",
+            "source": "tradingeconomics"
+        }
+    ]
 }

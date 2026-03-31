@@ -1215,13 +1215,24 @@
         "week_number": 100,
         "week_start_end_date": "03/23/2025-03/27/2025",
         "start_ammount": 36097.0,
-        "end_ammount": 35408.0,
-        "total_made": -689.0,
+        "end_ammount": 35434.0,
+        "total_made": -663.0,
         "num_of_trades": 201,
         "num_of_profitable_trades": 53,
         "num_of_negitive_trades": 148,
         "description": "Day 1, made 34 trades, 7 wins 27 losses, lost -$113, used $1,431 BP, today had alot of erroes, i solved the error on the economic calander errors, plus the throttling of Chart PNG exports, as im typing this im trying to figure out the shell terminal issue I'm having with VScode with it repeating so much. Day 2, made 45 trades, 11 wins 34 losses, lost -$308, used $1,911 BP, full autonomous day testing the economic calander code and PNG throttle back, both passed. Day 3, made 44 trades, 6 wins 38 losses, lost -$382, used $1,828 BP. Day 4, made 37 trades, 17 wins 20 losses, made $140, used $1,506 BP. Day 5, made 41 trades, 12 wins 29 losses, lost -$26, used $1,742 BP.",
         "important_message_ids": []
+    },
+    {
+        "week_number": 101,
+        "week_start_end_date": "03/30/2025-04/03/2025",
+        "start_ammount": 35434.0,
+        "end_ammount": 3540.0,
+        "total_made": -26.0,
+        "num_of_trades": 41,
+        "num_of_profitable_trades": 12,
+        "num_of_negitive_trades": 29,
+        "description": "Day 1, made 41 trades, 12 wins 29 losses, lost -$26, used $1,742 BP.",
+        "important_message_ids": []
     }
-
 ]

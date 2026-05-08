@@ -1,7 +1,7 @@
 {
     "REAL_MONEY_ACTIVATED": false,
-    "START_OF_DAY_BALANCE": 35431.0,
-    "START_OF_DAY_DATE": "2026-03-30",
+    "START_OF_DAY_BALANCE": 35796.0,
+    "START_OF_DAY_DATE": "2026-05-08",
     "SYMBOL": "SPY",
     "TIMEFRAMES": [
         "2M",
@@ -41,7 +41,7 @@
         "update_existing": true
     },
     "STRATEGY_TAG_INCLUDE_TIMEFRAME": true,
-    "RESEARCH_SIGNALS_ENABLED": true,
+    "RESEARCH_SIGNALS_ENABLED": false,
     "RESEARCH_SIGNALS_TIMEFRAMES": [
         "2M",
         "5M",

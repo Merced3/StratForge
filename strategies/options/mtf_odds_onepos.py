@@ -19,7 +19,7 @@ EXIT_NEUTRAL_THRESHOLD = 0.80
 EXIT_REVERSE_THRESHOLD = 2.0
 MAX_BARS_IN_TRADE = 8
 IMPULSE_MIN_BODY_RATIO = 0.55
-IS_ENABLED = True
+IS_ENABLED = False
 STRATEGY_DESCRIPTION = (
     "Single-position multi-timeframe odds engine. Every closed candle contributes weighted "
     "bull/bear evidence (2M/5M/15M), smoothed into an odds score. Entries trigger on the "

@@ -220,12 +220,14 @@ def _compute_metrics(positions: list[PositionSummary]) -> dict:
     entry_cost = sum(p.entry_cost for p in closed) if closed else 0.0
     pnl_per_dollar = (pnl_total / entry_cost) if entry_cost > 0 else None
     trades_per_day = (len(closed) / trade_days_count) if trade_days_count else None
-    if len(closed) < 50:
-        sample_flag = "LOW"
-    elif len(closed) < 200:
-        sample_flag = "LIMITED"
+    if len(closed) < 100:
+        sample_flag = "LOW STATISTICAL VALUE"
+    elif len(closed) < 500:
+        sample_flag = "LIMITED STATISTICAL VALUE"
+    elif len(closed) < 1000:
+        sample_flag = "GOOD STATISTICAL VALUE"
     else:
-        sample_flag = "OK"
+        sample_flag = "GREAT STATISTICAL VALUE"
     sample_summary = f"{len(closed)} trades ({sample_flag})"
 
     return {

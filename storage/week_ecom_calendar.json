@@ -1,43 +1,50 @@
 {
     "version": 1,
-    "week_start": "2026-03-30",
-    "week_end": "2026-04-05",
+    "week_start": "2026-05-04",
+    "week_end": "2026-05-10",
     "timezone": "America/Chicago",
     "source": "tradingeconomics",
     "events": [
         {
-            "date": "2026-03-31",
+            "date": "2026-05-05",
+            "time_label": "09:00 AM",
+            "title": "ISM Services PMI",
+            "starts_at": "2026-05-05T09:00:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-05-05",
             "time_label": "09:00 AM",
             "title": "JOLTs Job Openings",
-            "starts_at": "2026-03-31T09:00:00-05:00",
+            "starts_at": "2026-05-05T09:00:00-05:00",
             "source": "tradingeconomics"
         },
         {
-            "date": "2026-04-01",
-            "time_label": "07:30 AM",
-            "title": "Retail Sales MoM",
-            "starts_at": "2026-04-01T07:30:00-05:00",
-            "source": "tradingeconomics"
-        },
-        {
-            "date": "2026-04-01",
+            "date": "2026-05-06",
             "time_label": "09:00 AM",
-            "title": "ISM Manufacturing PMI",
-            "starts_at": "2026-04-01T09:00:00-05:00",
+            "title": "Ivey PMI s.a",
+            "starts_at": "2026-05-06T09:00:00-05:00",
             "source": "tradingeconomics"
         },
         {
-            "date": "2026-04-03",
+            "date": "2026-05-08",
             "time_label": "07:30 AM",
             "title": "Non Farm Payrolls",
-            "starts_at": "2026-04-03T07:30:00-05:00",
+            "starts_at": "2026-05-08T07:30:00-05:00",
             "source": "tradingeconomics"
         },
         {
-            "date": "2026-04-03",
+            "date": "2026-05-08",
             "time_label": "07:30 AM",
             "title": "Unemployment Rate",
-            "starts_at": "2026-04-03T07:30:00-05:00",
+            "starts_at": "2026-05-08T07:30:00-05:00",
+            "source": "tradingeconomics"
+        },
+        {
+            "date": "2026-05-08",
+            "time_label": "09:00 AM",
+            "title": "Michigan Consumer Sentiment Prel",
+            "starts_at": "2026-05-08T09:00:00-05:00",
             "source": "tradingeconomics"
         }
     ]

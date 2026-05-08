@@ -17,6 +17,8 @@ cred.py
 storage/emas/
 storage/flags/
 storage/markers/
+storage/images/
+storage/week_ecom_calendar.json
 storage/objects/current/
 storage/objects/timeline/
 storage/objects/objects.json

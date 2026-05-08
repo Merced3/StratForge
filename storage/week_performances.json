@@ -1232,7 +1232,52 @@
         "num_of_trades": 35,
         "num_of_profitable_trades": 7,
         "num_of_negitive_trades": 28,
-        "description": "Day 1, made 35 trades, 7 wins 28 losses, gained $23, used $1,453 BP.",
+        "description": "",
+        "days_documentation": {
+            "Day 1": "Day 1, made 35 trades, 7 wins 28 losses, gained $23, used $1,453 BP.",
+            "Day 2": "",
+            "Day 3": "",
+            "Day 4": "",
+            "Day 5": ""
+        },
+        "important_message_ids": []
+    },
+    {
+        "week_number": 102,
+        "week_start_end_date": "03/06/2025-04/10/2025",
+        "start_ammount": 35408.0,
+        "end_ammount": 35431.0,
+        "total_made": 23.0,
+        "num_of_trades": 35,
+        "num_of_profitable_trades": 7,
+        "num_of_negitive_trades": 28,
+        "description": "",
+        "days_documentation": {
+            "Day 1": "",
+            "Day 2": "",
+            "Day 3": "",
+            "Day 4": "",
+            "Day 5": ""
+        },
+        "important_message_ids": []
+    },
+    {
+        "week_number": 103,
+        "week_start_end_date": "03/13/2025-04/17/2025",
+        "start_ammount": 35408.0,
+        "end_ammount": 35431.0,
+        "total_made": 23.0,
+        "num_of_trades": 35,
+        "num_of_profitable_trades": 7,
+        "num_of_negitive_trades": 28,
+        "description": "",
+        "days_documentation": {
+            "Day 1": "",
+            "Day 2": "",
+            "Day 3": "",
+            "Day 4": "",
+            "Day 5": ""
+        },
         "important_message_ids": []
     }
 ]
